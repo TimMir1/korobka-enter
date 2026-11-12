@@ -124,6 +124,17 @@ ol,ul{padding-left:20px;margin:0;display:grid;gap:6px}
 .sheet .pt1{fill:#cfa874}
 .sheet .pl{fill:#2a1f12;font-family:var(--f-mono);text-anchor:middle;dominant-baseline:central}
 .warnp{color:var(--warn);font-size:14px;margin:8px 0 0}
+.checks{margin:0;padding:8px 10px;border-radius:4px;font-size:13px;background:#e3f3e8;color:#1d5c37;display:grid;gap:4px}
+.checks.warn{background:#fbefd9;color:#7a4a0c}
+.checks ul{margin:0;padding-left:18px;gap:3px}
+#clientCard{display:none}
+body.client #cfg,body.client .grid,body.client #nestSec,body.client .fab,body.client #share,body.client #shareC{display:none!important}
+body.client .top{grid-template-columns:1fr}
+body.client #clientCard{display:block}
+body.client .stage{position:relative;top:0}
+.cc{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 24px}
+.cc div{display:grid;gap:2px}.cc b{font-size:12px;font-weight:500;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.cc span{font-size:16px}
 </style>
 </head>
 <body>
@@ -148,12 +159,26 @@ ol,ul{padding-left:20px;margin:0;display:grid;gap:6px}
         <button id="spin" aria-pressed="true">Вращение</button>
         <button id="fsOpen" type="button">⛶ Во весь экран</button>
         <button id="share" type="button" class="primary">Поделиться</button>
+        <button id="shareC" type="button">Ссылка для клиента</button>
         <span class="hint" id="hint">Тяни мышью — вращать, колесо — масштаб</span>
       </div>
     </div>
 
     <aside id="cfg">
       <h2>Настройки</h2>
+      <div class="checks" id="checks" role="status"></div>
+      <fieldset>
+        <legend>Шаблоны</legend>
+        <label class="f" for="preset">Готовый размер (по изделию внутри)
+          <select id="preset"><option value="">— выбрать —</option></select></label>
+        <div class="row2">
+          <label class="f" for="myBox">Мои коробки<select id="myBox"><option value="">— сохранённые —</option></select></label>
+          <label class="f" for="myName">Название<input id="myName" type="text" autocomplete="off" placeholder="например, Вино для Ивана"></label>
+        </div>
+        <div class="tools"><button id="mySave" type="button">Сохранить текущую</button><button id="myDel" type="button">Удалить выбранную</button></div>
+        <p class="nm" id="myMsg">Шаблон подставит размеры под текущую толщину фанеры и крышки. Свои коробки хранятся в этом браузере.</p>
+      </fieldset>
+      <hr>
       <fieldset>
         <legend>Размеры коробки, мм</legend>
         <div class="row">
@@ -199,6 +224,10 @@ ol,ul{padding-left:20px;margin:0;display:grid;gap:6px}
         <legend>Цвет корпуса</legend>
         <label class="f" for="pMat">Отделка
           <select id="pMat"><option value="ply" selected>Фанера, без покраски</option><option value="paint">Покраска</option></select></label>
+        <label class="f" for="pWood" id="wWood">Тон фанеры (масло / морилка)
+          <select id="pWood"><option value="natural" selected>Натуральная</option><option value="light">Светлая (белёная)</option><option value="honey">Медовая</option><option value="oak">Дуб</option><option value="walnut">Орех</option><option value="wenge">Венге</option></select></label>
+        <label class="f" for="pGlassT">Оргстекло крышки
+          <select id="pGlassT"><option value="clear" selected>Прозрачное</option><option value="smoke">Дымчатое (серое)</option><option value="bronze">Бронза</option><option value="blue">Голубое</option><option value="frost">Матовое</option></select></label>
         <div id="wPaint" class="sub2" hidden>
           <div class="pal" data-for="pPaint" aria-label="Цвета краски"></div>
           <label class="f" for="pPaint">Свой цвет (HEX)<input id="pPaint" class="hex" type="text" value="#24384f" maxlength="7" spellcheck="false" autocomplete="off"></label>
@@ -275,6 +304,13 @@ ol,ul{padding-left:20px;margin:0;display:grid;gap:6px}
     </aside>
   </div>
 
+  <section id="clientCard">
+    <h2>Ваша коробка</h2>
+    <div class="cc" id="ccBody"></div>
+    <p class="nm" style="margin-top:12px">Крутите модель пальцем или мышью. Ползунок «Крышка» показывает, как она открывается.</p>
+    <p style="margin:12px 0 0"><a id="ccFull" href="#" style="color:var(--accent);font-size:14px">Открыть полный конструктор →</a></p>
+  </section>
+
   <div class="grid">
     <section>
       <h2>Детали к раскрою</h2>
@@ -302,7 +338,7 @@ ol,ul{padding-left:20px;margin:0;display:grid;gap:6px}
         <li>Разложить дно и стенки лицом вниз встык по усам, проклеить скотчем снаружи.</li>
         <li>Нанести клей в усы, «сложить» коробку, стянуть лентой.</li>
         <li>Если есть вкладыш — положить его на дно.</li>
-        <li>Вставить крышку в пазы, приклеить накладку к крышке при закрытой крышке, чтобы попасть в ус.</li>
+        <li id="asmLid">Вставить крышку в пазы, приклеить накладку к крышке при закрытой крышке, чтобы попасть в ус.</li>
       </ol>
     </section>
   </div>
@@ -333,6 +369,12 @@ ol,ul{padding-left:20px;margin:0;display:grid;gap:6px}
 (function(){
 const $=id=>document.getElementById(id);
 const cv=$('c'),g=cv.getContext('2d');
+const CLIENT=/(^|[#&])view=1/.test(location.hash);if(CLIENT){document.body.classList.add('client');document.querySelector('h1').textContent='Ваша коробка';}
+const TONES={natural:{n:'натуральная',pv:'#cfae84'},light:{n:'белёная',op:'source-over',c:'rgba(255,250,240,.38)',pv:'#ddc7a4'},honey:{n:'медовая',op:'multiply',c:'#e8b878',pv:'#c59a5e'},
+  oak:{n:'дуб',op:'multiply',c:'#c8955c',pv:'#b48a58'},walnut:{n:'орех',op:'multiply',c:'#8a5a3c',pv:'#7d5536'},wenge:{n:'венге',op:'multiply',c:'#5a4032',pv:'#4f3a2d'}};
+const GTS={clear:{n:'прозрачное',c:[205,235,247],a:.14,e:'rgba(120,175,200,.7)'},smoke:{n:'дымчатое',c:[62,66,72],a:.5,e:'rgba(50,55,60,.8)'},
+  bronze:{n:'бронза',c:[150,105,60],a:.42,e:'rgba(120,85,50,.8)'},blue:{n:'голубое',c:[110,165,215],a:.32,e:'rgba(80,130,180,.8)'},frost:{n:'матовое',c:[236,240,242],a:.64,e:'rgba(170,180,185,.8)'}};
+let tone=TONES.natural,gtint=GTS.clear,egSh=null;
 const PX=3;let OPEN='cap',HD=15,HO=25,CAP=true;let DEP=4,LIP=6,GW=4.2,LW=0,LL=0,LWa=0,LLa=0; // губа над пазом, глубина паза, пикс/мм макета
 let W,L,H,T,G,HW,HL,HLW,D,FW,FH,IW=254,IL=314,IT=3,insOn=false,parts=[];
 const wood=new Image(),edge=new Image();let ready=0,dirty=true;
@@ -485,9 +527,12 @@ let guide=null;
 function art(){
   if(!FW)return;render(ic,eg,PX);
   const pv=$('eprev'),pc=pv.getContext('2d');pv.width=eg.width;pv.height=eg.height;pv.style.aspectRatio=eg.width+'/'+eg.height;
-  pc.fillStyle=paint?rgbK(paintRGB,.85):'#cfae84';pc.fillRect(0,0,pv.width,pv.height);
+  pc.fillStyle=paint?rgbK(paintRGB,.85):tone.pv;pc.fillRect(0,0,pv.width,pv.height);
   if(insOn){pc.save();pc.shadowColor='rgba(0,0,0,.4)';pc.shadowBlur=12;pc.shadowOffsetY=4;pc.drawImage(ic,(FW-IW)/2*PX,(FH-IL)/2*PX,IW*PX,IL*PX);pc.restore();}
   else{pc.fillStyle='rgba(0,0,0,.35)';pc.font='500 30px "Golos Text",sans-serif';pc.textAlign='center';pc.fillText('дно коробки (без вкладыша)',pv.width/2,pv.height/2);}
+  egSh=null;if(layers.some(Lr=>Lr.target==='glass'&&Lr.on!==false)){const a=document.createElement('canvas');a.width=eg.width;a.height=eg.height;const ax=a.getContext('2d');
+    ax.drawImage(eg,0,0);ax.globalCompositeOperation='source-in';ax.fillStyle='#000';ax.fillRect(0,0,a.width,a.height);
+    const b2=document.createElement('canvas');b2.width=a.width;b2.height=a.height;const bx=b2.getContext('2d');bx.filter='blur(5px)';bx.drawImage(a,0,0);egSh=b2;}
   if(showGlass){pc.save();pc.shadowColor='rgba(0,0,0,.75)';pc.shadowBlur=3;pc.drawImage(eg,0,0);pc.restore();}
   if(OPEN==='hole'){const hx=FW/2*PX,hy=(L-T-HO)*PX,hr=HD/2*PX;pc.save();pc.beginPath();pc.arc(hx,hy,hr,0,Math.PI*2);pc.fillStyle='rgba(0,0,0,.45)';pc.fill();
     pc.strokeStyle='rgba(255,255,255,.9)';pc.lineWidth=2;pc.setLineDash([6,4]);pc.stroke();pc.restore();}
@@ -568,11 +613,11 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
   sync();});
 function markPal(){document.querySelectorAll('.pal button').forEach(b=>{const i=$(b.getAttribute('data-f'));b.setAttribute('aria-pressed',!!i&&hexOk(i.value)&&hexN(i.value)===b.getAttribute('data-c'));});}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-c]');if(!b)return;const f=b.getAttribute('data-f');$(f).value=b.getAttribute('data-c');sync();markPal();});
-function readBody(){paint=$('pMat').value==='paint';if(hexOk($('pPaint').value))paintRGB=hexRGB(hexN($('pPaint').value));insBg=$('iBg').value;if(hexOk($('iCol').value))insCol=hexN($('iCol').value);showGlass=$('vGlass').checked;
+function readBody(){paint=$('pMat').value==='paint';tone=TONES[$('pWood').value]||TONES.natural;gtint=GTS[$('pGlassT').value]||GTS.clear;$('wWood').hidden=paint;if(hexOk($('pPaint').value))paintRGB=hexRGB(hexN($('pPaint').value));insBg=$('iBg').value;if(hexOk($('iCol').value))insCol=hexN($('iCol').value);showGlass=$('vGlass').checked;
   $('wPaint').hidden=!paint;$('wICol').hidden=insBg!=='color';$('wIFile').hidden=insBg!=='file';markPal();}
 
 /* ---------- синхронизация полей (события + сверка) ---------- */
-const DK=['pW','pL','pH','pT','pG','pGW','pLip','pDep','pLW','pLL','pOpen','pHD','pHO','pHCap','iOn','iW','iL','iT','nQ','nSW','nSH','nGap','nMar'],BK=['pMat','pPaint','iBg','iCol','vGlass'];
+const DK=['pW','pL','pH','pT','pG','pGW','pLip','pDep','pLW','pLL','pOpen','pHD','pHO','pHCap','iOn','iW','iL','iT','nQ','nSW','nSH','nGap','nMar'],BK=['pMat','pPaint','pWood','pGlassT','iBg','iCol','vGlass'];
 let lastD='',lastB='';
 function showErr(m){const b=$('eerr');b.hidden=false;b.textContent=m;}
 let lastPG=null;
@@ -589,7 +634,7 @@ setInterval(sync,300);
 
 /* ---------- сохранение ---------- */
 const SK='korobka-konstruktor-v2',FK=DK.concat(BK);
-function save(){try{const o={layers:layers.map(Lr=>{const c=Object.assign({},Lr);delete c._bb;return c;}),sel};
+function save(){if(CLIENT)return;try{const o={layers:layers.map(Lr=>{const c=Object.assign({},Lr);delete c._bb;return c;}),sel};
   FK.forEach(k=>{const e=$(k);o[k]=e.type==='checkbox'?e.checked:e.value;});
   try{localStorage.setItem(SK,JSON.stringify(Object.assign({bgSrc},o)));}catch(e){localStorage.setItem(SK,JSON.stringify(o));}}catch(e){}}
 function load(){let o=null;try{o=JSON.parse(localStorage.getItem(SK)||'null');}catch(e){}
@@ -605,6 +650,8 @@ function load(){let o=null;try{o=JSON.parse(localStorage.getItem(SK)||'null');}c
 const r1=v=>Math.round(v*100)/100,fm=v=>String(r1(v)).replace('.',',');
 function specs(){
   const tw=LW,lidL=LL;
+  $('asmLid').textContent=CAP?'Вставить крышку в пазы, приклеить накладку к крышке при закрытой крышке, чтобы попасть в ус.':`Вставить крышку в пазы. Открывается за отверстие Ø${fm(HD)} мм.`;
+  checks();clientCard();
   $('hdims').textContent=`${fm(W)} × ${fm(L)} × ${fm(H)} мм · внутри ${fm(FW)} × ${fm(FH)} × ${fm(HLW-T)} мм`;
   $('hsub').textContent=`Фанера ${fm(T)} мм, все соединения на ус 45° (углы и дно), выдвижная крышка из оргстекла ${fm(G)} мм`+(insOn?`, внутри вкладыш ${fm(IW)} × ${fm(IL)} мм.`:'.');
   document.title=`Конструктор коробки ${fm(W)}×${fm(L)}`;
@@ -622,6 +669,60 @@ function specs(){
   const plyA=(W*L+2*L*H+W*H+W*HLW)/1e6,glA=(W*lidL+(CAP?W*T:0))/1e6;
   $('spec').innerHTML=`<dt>Габарит</dt><dd>${fm(W)} × ${fm(L)} × ${fm(H)}</dd><dt>Внутри</dt><dd>${fm(FW)} × ${fm(FH)} × ${fm(HLW-T)} (до крышки)</dd><dt>Фанера</dt><dd>${T} мм, ≈ ${plyA.toFixed(2).replace('.',',')} м²</dd><dt>Оргстекло</dt><dd>${fm(G)} мм, ≈ ${glA.toFixed(2).replace('.',',')} м²</dd><dt>Видимое поле</dt><dd>${fm(FW)} × ${fm(FH)}</dd><dt>Соединение</dt><dd>ус 45°: 4 угла + 4 ребра дна</dd>`;
 }
+
+/* ---------- проверка размеров ---------- */
+const STD_PLEX=[1,1.5,2,3,4,5,6,8,10,12,15];
+function checks(){const w=[],raw=id=>num(id,NaN),R=v=>fm(v);
+  const rw=raw('pW'),rl=raw('pL'),rh=raw('pH'),rt=raw('pT'),rg=raw('pG'),rd=raw('pDep'),rlip=raw('pLip'),rgw=raw('pGW');
+  if(isFinite(rw)&&Math.abs(rw-W)>1e-6)w.push(`Ширина ${R(rw)} вне пределов 60–1500 — взял ${R(W)}.`);
+  if(isFinite(rl)&&Math.abs(rl-L)>1e-6)w.push(`Длина ${R(rl)} вне пределов 60–1500 — взял ${R(L)}.`);
+  if(isFinite(rh)&&Math.abs(rh-H)>1e-6)w.push(`Высота ${R(rh)} не подходит: нужно от ${R(T+LIP+G+3)} (дно + паз + крышка) до 300 — взял ${R(H)}.`);
+  if(isFinite(rt)&&Math.abs(rt-T)>1e-6)w.push(`Толщина фанеры ограничена 2–30 мм — взял ${R(T)}.`);
+  if(isFinite(rg)&&Math.abs(rg-G)>1e-6)w.push(`Толщина стекла ограничена 1–15 мм — взял ${R(G)}.`);
+  if(isFinite(rgw)&&Math.abs(rgw-GW)>1e-6)w.push(`Ширина паза ${R(rgw)} — должна быть от толщины стекла до +3 мм, взял ${R(GW)}.`);
+  if(isFinite(rlip)&&Math.abs(rlip-LIP)>1e-6)w.push(`Утопление крышки ${R(rlip)} — взял ${R(LIP)}.`);
+  if(isFinite(rd)&&Math.abs(rd-DEP)>1e-6)w.push(`Глубина паза ${R(rd)} — в стенке должен остаться хотя бы 1 мм, взял ${R(DEP)}.`);
+  if(D<3)w.push(`Под пазом в стенке остаётся ${R(D)} мм — стенка может треснуть. Лучше глубина паза не больше ${R(T-3)} мм.`);
+  if(LIP-(GW-G)<2)w.push(`Над пазом остаётся ${R(LIP-(GW-G))} мм фанеры — кромка будет колоться. Увеличьте «от верха крышки до верха коробки».`);
+  if((LW-FW)/2<2)w.push(`Крышка заходит в паз всего на ${R((LW-FW)/2)} мм с боков — может выскочить. Увеличьте глубину паза или ширину крышки.`);
+  if(HLW-T<5)w.push(`Внутри до крышки всего ${R(HLW-T)} мм.`);
+  if(CAP&&!STD_PLEX.some(v=>Math.abs(v-LIP)<1e-6))w.push(`Накладка из оргстекла ${R(LIP)} мм — такой толщины обычно не бывает (стандарт: 2, 3, 4, 5, 6, 8, 10). Поменяйте «от верха крышки до верха коробки».`);
+  if(!STD_PLEX.some(v=>Math.abs(v-G)<1e-6))w.push(`Оргстекло ${R(G)} мм — нестандартная толщина, уточните у поставщика.`);
+  if(OPEN==='hole'&&HO-HD/2<T)w.push(`Отверстие для пальца наезжает на низкий торец — палец не пройдёт. Увеличьте расстояние до центра (минимум ${R(T+HD/2)}).`);
+  if(OPEN==='hole'&&isFinite(raw('pHD'))&&Math.abs(raw('pHD')-HD)>1e-6)w.push(`Диаметр отверстия ограничен — взял ${R(HD)} мм.`);
+  if(insOn&&HLW-T-IT<1)w.push('Вкладыш почти упирается в крышку — крышка будет тереть.');
+  if(T>12)w.push(`Для уса на фанере ${R(T)} мм нужна V-фреза 90° диаметром от ${R(2*T)} мм или фаска в несколько проходов.`);
+  const c=$('checks');c.className='checks'+(w.length?' warn':'');
+  c.innerHTML=w.length?`<b>Проверьте (${w.length}):</b><ul>${w.map(t=>'<li>'+t+'</li>').join('')}</ul>`:'✓ Проверка: размеры сходятся, коробку можно делать.';}
+function clientCard(){const nG=layers.filter(Lr=>Lr.target==='glass'&&Lr.on!==false).length;
+  const it=[['Размер снаружи',`${fm(W)} × ${fm(L)} × ${fm(H)} мм`],['Внутри',`${fm(FW)} × ${fm(FH)} мм, высота ${fm(HLW-T)} мм`],
+    ['Корпус',`фанера ${fm(T)} мм, `+(paint?'покраска':'тон: '+tone.n)],['Крышка',`выдвижная, оргстекло ${fm(G)} мм, ${gtint.n}`],
+    ['Открывание',OPEN==='hole'?`отверстие для пальца Ø${fm(HD)} мм`+(CAP?' + накладка':''):'накладка-ручка'],['Гравировка',nG?`на крышке: ${nG} ${plural(nG,'элемент','элемента','элементов')}`:'нет']];
+  if(insOn)it.push(['Вкладыш',`${fm(IW)} × ${fm(IL)} мм`]);
+  $('ccBody').innerHTML=it.map(([k,v])=>`<div><b>${k}</b><span>${esc(v)}</span></div>`).join('');}
+
+/* ---------- шаблоны и мои коробки ---------- */
+const PRESETS=[['std','Стандартная 294 × 354 × 38 (снаружи)',null,[294,354,38]],['pen','Ручка',[30,170,25]],['cards','Игральные карты / визитки',[70,95,25]],
+  ['watch','Часы',[110,110,70]],['photo','Фото 10 × 15',[105,155,15]],['card','Открытка / сертификат',[120,180,15]],['a4','Диплом / грамота А4',[215,302,15]],
+  ['wine','Бутылка вина 0,75',[95,330,95]],['knife','Нож / инструмент',[60,280,40]],['set','Набор (ножи, приборы)',[200,350,50]]];
+$('preset').innerHTML='<option value="">— выбрать —</option>'+PRESETS.map(p=>`<option value="${p[0]}">${p[1]}${p[2]?` — внутри ${p[2].join(' × ')}`:''}</option>`).join('');
+$('preset').addEventListener('change',()=>{const p=PRESETS.find(x=>x[0]===$('preset').value);if(!p)return;
+  const o=p[3]||[p[2][0]+2*T,p[2][1]+2*T,p[2][2]+T+LIP+G];$('pW').value=fm(o[0]);$('pL').value=fm(o[1]);$('pH').value=fm(o[2]);$('pLW').value='';$('pLL').value='';
+  $('myMsg').textContent=`Шаблон «${p[1]}»: снаружи ${fm(o[0])} × ${fm(o[1])} × ${fm(o[2])} мм.`;$('preset').value='';sync();});
+const MK='korobka-my-v1',myGet=()=>{try{return JSON.parse(localStorage.getItem(MK)||'[]')||[];}catch(e){return[];}};
+function myList(sel){const a=myGet();$('myBox').innerHTML='<option value="">— сохранённые —</option>'+a.map((b,i)=>`<option value="${i}">${esc(b.name)}</option>`).join('');if(sel!=null)$('myBox').value=String(sel);}
+function stateNow(){const o={layers:layers.map(Lr=>{const c=Object.assign({},Lr);delete c._bb;return c;}),bgSrc};FK.forEach(k=>{const e=$(k);o[k]=e.type==='checkbox'?e.checked:e.value;});return o;}
+function applyState(o){FK.forEach(k=>{const e=$(k);if(o[k]==null||!e)return;if(e.type==='checkbox')e.checked=!!o[k];else e.value=o[k];});
+  layers=Array.isArray(o.layers)?o.layers:[];layers.forEach(Lr=>{if(Lr.type==='img'&&Lr.src){const im=new Image();im.onload=()=>art();im.src=Lr.src;imgCache[Lr.id]=im;}});
+  if(o.bgSrc){bgSrc=o.bgSrc;const im=new Image();im.onload=()=>{bgImg=im;art();};im.src=o.bgSrc;}
+  sel=null;lastPG=$('pG').value;readBody();lastB=sig(BK);lastD=sig(DK);build();fillEd();renderList();}
+$('mySave').onclick=()=>{const name=($('myName').value||'').trim()||`Коробка ${fm(W)}×${fm(L)}×${fm(H)}`;const a=myGet();const i=a.findIndex(b=>b.name===name);
+  const rec={name,state:stateNow()};if(i>=0)a[i]=rec;else a.push(rec);
+  try{localStorage.setItem(MK,JSON.stringify(a));myList(i>=0?i:a.length-1);$('myMsg').textContent=`Сохранено: «${name}».`;}
+  catch(e){$('myMsg').textContent='Не хватило места в браузере — скорее всего, из-за больших картинок. Удалите старые коробки или уменьшите логотип.';}};
+$('myBox').addEventListener('change',()=>{const b=myGet()[+$('myBox').value];if(!b||$('myBox').value==='')return;applyState(b.state);$('myName').value=b.name;$('myMsg').textContent=`Открыта «${b.name}».`;});
+$('myDel').onclick=()=>{const v=$('myBox').value;if(v==='')return;const a=myGet();const b=a.splice(+v,1)[0];try{localStorage.setItem(MK,JSON.stringify(a));}catch(e){}myList();$('myMsg').textContent=b?`Удалена «${b.name}».`:'';};
+myList();
 
 /* ---------- раскрой на лист (MaxRects) ---------- */
 const SMk={t:0,r:1,b:1,l:1},SAk={t:1,r:1,b:1,l:1};
@@ -720,16 +821,19 @@ function shotCanvas(){dirty=true;draw();const pad=40,w=1200,ih=Math.round(w*cv.h
   x.fillStyle='#f4f2ed';x.fillRect(0,0,c.width,c.height);x.drawImage(cv,0,0,w,ih);
   x.fillStyle='#1f2a33';x.font='700 40px "Golos Text",sans-serif';x.textBaseline='top';x.fillText(`Коробка ${fm(W)} × ${fm(L)} × ${fm(H)} мм`,pad,ih+28);
   x.font='400 26px "Golos Text",sans-serif';x.fillStyle='#4b5560';
-  x.fillText(`Фанера ${fm(T)} мм · ${paint?'покраска':'без покраски'} · крышка оргстекло ${fm(G)} мм`+(insOn?` · вкладыш ${fm(IW)}×${fm(IL)}×${fm(IT)}`:''),pad,ih+84);
+  x.fillText(`Фанера ${fm(T)} мм · ${paint?'покраска':'тон '+tone.n} · крышка оргстекло ${fm(G)} мм, ${gtint.n}`+(insOn?` · вкладыш ${fm(IW)}×${fm(IL)}×${fm(IT)}`:''),pad,ih+84);
   return c;}
-$('share').onclick=async()=>{const link=shareState(),txt=`Коробка ${fm(W)}×${fm(L)}×${fm(H)} мм — посмотреть и покрутить: ${link}`;
+$('ccFull').onclick=e=>{e.preventDefault();location.href=shareState();location.reload();};
+$('shareC').onclick=()=>doShare(shareState()+'&view=1',l=>`Ваша коробка ${fm(W)}×${fm(L)}×${fm(H)} мм — посмотрите в 3D, можно покрутить и открыть крышку: ${l}`);
+$('share').onclick=()=>doShare(shareState(),l=>`Коробка ${fm(W)}×${fm(L)}×${fm(H)} мм — посмотреть и покрутить: ${l}`);
+async function doShare(link,mk){const txt=mk(link);
   try{const c=shotCanvas();const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.9));const file=new File([blob],`korobka-${r1(W)}x${r1(L)}x${r1(H)}.jpg`,{type:'image/jpeg'});
     if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Коробка',text:txt});return;}
     if(navigator.share){await navigator.share({title:'Коробка',text:txt,url:link});return;}
     dl(blob,file.name);try{await navigator.clipboard.writeText(link);}catch(e){}
     window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank','noopener');
     $('xMsg').textContent='Картинка скачана, ссылка на коробку скопирована. Открыл WhatsApp — прикрепи картинку к сообщению.';
-  }catch(e){if(e&&e.name!=='AbortError')$('xMsg').textContent='Не удалось поделиться: '+e.message;}};
+  }catch(e){if(e&&e.name!=='AbortError')$('xMsg').textContent='Не удалось поделиться: '+e.message;}}
 cv.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(0.4,Math.min(3,zoom*Math.exp(-e.deltaY*0.001)));dirty=true;},{passive:false});
 addEventListener('resize',()=>dirty=true);
 const LIGHT=unit([-0.45,0.8,0.55]);
@@ -771,24 +875,31 @@ function drawFace(F,P,o){
       const uv=isEdge?(p=>[P.ou+dot(sub(p,F.a0),F.tn)*8,(dot(p,F.e)-F.em+4)*ek]):(p=>[(dot(p,F.s)-F.sm+4)*wk,(dot(p,F.l)-F.lm+4)*wk]);
       gridTex(isEdge?edge:wood,P3,uv,o,isEdge?Math.min(n,3):n);g.restore();
     }else{polyPath(S);g.fillStyle='#e6d2b4';g.fill();}
+    if(tone.c){polyPath(S);g.save();g.globalCompositeOperation=tone.op;g.fillStyle=tone.c;g.fill();g.restore();}
+    if(P===parts[0]&&F.kind==='face'&&F.n[1]>0.9)shadowOn(S,T);
     polyPath(S);g.fillStyle=`rgba(45,28,10,${(0.42*(1-lam)).toFixed(3)})`;g.fill();
     g.strokeStyle=isEdge?'rgba(90,60,30,.3)':'rgba(90,60,30,.16)';g.lineWidth=.6;g.stroke();
   }else if(P.mat==='insert'){
     if(F.n[1]>0.9){const n=subdiv(S);const x0=-IW/2,x1=IW/2,z0=-IL/2,z1=IL/2;
-      rectTex(ic,x0,x1,z0,z1,F.c[1],o,Math.max(2,n));polyPath(S);g.fillStyle=`rgba(0,0,0,${(0.12*(1-lam)).toFixed(3)})`;g.fill();}
+      rectTex(ic,x0,x1,z0,z1,F.c[1],o,Math.max(2,n));shadowOn(S,T+IT);polyPath(S);g.fillStyle=`rgba(0,0,0,${(0.12*(1-lam)).toFixed(3)})`;g.fill();}
     else{polyPath(S);g.fillStyle=rgbK(insBg==='color'?hexRGB(insCol):BGS[insBg]||[150,148,142],.55+.45*lam);g.fill();g.strokeStyle='rgba(0,0,0,.15)';g.lineWidth=.5;g.stroke();}
   }else if(P.mat==='hole'){
     polyPath(S);if(F.kind==='face'){g.fillStyle=F.n[1]>0?'rgba(25,35,45,.28)':'rgba(25,35,45,.12)';g.fill();g.strokeStyle='rgba(60,120,150,.95)';g.lineWidth=1.2;g.stroke();}
     else{g.fillStyle=`rgba(175,220,238,${.45+.3*lam})`;g.fill();}
   }else{
-    polyPath(S);g.fillStyle=P.mat==='cap'?`rgba(200,232,244,${.5+.2*lam})`:`rgba(205,235,247,${.14+.12*lam})`;g.fill();
-    g.strokeStyle='rgba(120,175,200,.7)';g.lineWidth=.8;g.stroke();
+    const gc=gtint.c;polyPath(S);g.fillStyle=P.mat==='cap'?`rgba(${gc.join(',')},${Math.min(.92,gtint.a+.36+.2*lam)})`:`rgba(${gc.join(',')},${gtint.a+.12*lam})`;g.fill();
+    g.strokeStyle=gtint.e;g.lineWidth=.8;g.stroke();
     if(P.mat==='glass'&&F.n[1]>0.9){
       rectTex(eg,-(HW-T),HW-T,-(HL-T),HL-T,F.c[1]+0.05,o,Math.max(2,subdiv(S)));
       polyPath(S);const gr=g.createLinearGradient(S[0][0],S[0][1],S[2][0],S[2][1]);
       gr.addColorStop(0,'rgba(255,255,255,0)');gr.addColorStop(.45,'rgba(255,255,255,.16)');gr.addColorStop(.55,'rgba(255,255,255,0)');g.fillStyle=gr;g.fill();}
   }
 }
+// тень гравировки крышки на дне / вкладыше (свет сверху-слева)
+function shadowOn(S,yf){if(!egSh||!showGlass||ex>0.02)return;const hh=HLW+G-yf;if(hh<=0)return;
+  const dx=-LIGHT[0]/LIGHT[1]*hh,dz=-LIGHT[2]/LIGHT[1]*hh,oz=open*(L-T)*0.85;
+  g.save();polyPath(S);g.clip();g.globalAlpha=gtint===GTS.frost?.15:.32;
+  rectTex(egSh,-(HW-T)+dx,HW-T+dx,-(HL-T)+dz+oz,HL-T+dz+oz,yf+0.05,[0,0,0],Math.max(2,subdiv(S)));g.restore();}
 function draw(){
   const dpr=Math.min(devicePixelRatio,2),w=cv.clientWidth,h=cv.clientHeight;
   if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
@@ -919,7 +1030,7 @@ function notesPages(){
   c.font='400 28px "Golos Text",sans-serif';c.fillStyle='#4b5560';c.fillText('Задание оператору ЧПУ: крой и фрезеровка',M,y);y+=52;
   const y0=y,sw=640,sh=Math.round(sw*cv.height/cv.width);
   try{c.fillStyle='#efece6';c.fillRect(PW-M-sw,y0,sw,sh);c.drawImage(cv,PW-M-sw,y0,sw,sh);}catch(e){}
-  const dl2=[['Габарит',`${fm(W)} × ${fm(L)} × ${fm(H)} мм`],['Фанера',`${fm(T)} мм (замерить!)`],['Оргстекло',`${fm(G)} мм`],['Соединение','ус 45°: 4 угла и дно'],['Паз',`${fm(GW)} × ${fm(DEP)} мм, крышка ниже верха на ${fm(LIP)} мм`],['Внутри',`${fm(FW)} × ${fm(FH)} × ${fm(HLW-T)} мм`],['Отделка',paint?'покраска '+$('pPaint').value:'фанера без покрытия'],['Дата',new Date().toLocaleDateString('ru-RU')]];
+  const dl2=[['Габарит',`${fm(W)} × ${fm(L)} × ${fm(H)} мм`],['Фанера',`${fm(T)} мм (замерить!)`],['Оргстекло',`${fm(G)} мм, ${gtint.n}`],['Соединение','ус 45°: 4 угла и дно'],['Паз',`${fm(GW)} × ${fm(DEP)} мм, крышка ниже верха на ${fm(LIP)} мм`],['Внутри',`${fm(FW)} × ${fm(FH)} × ${fm(HLW-T)} мм`],['Отделка',paint?'покраска '+$('pPaint').value:'фанера, тон: '+tone.n],['Дата',new Date().toLocaleDateString('ru-RU')]];
   dl2.forEach(([k,v])=>{c.font='400 24px "Golos Text",sans-serif';c.fillStyle='#66707a';c.fillText(k,M,y);c.font='500 24px "Golos Text",sans-serif';c.fillStyle='#1f2a33';c.fillText(v,M+190,y);y+=36;});
   y=Math.max(y,y0+sh)+10;
   h2('Детали');
