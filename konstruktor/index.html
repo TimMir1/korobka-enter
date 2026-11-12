@@ -110,6 +110,20 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:1
 dt{color:var(--muted)}dd{margin:0;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 ol,ul{padding-left:20px;margin:0;display:grid;gap:6px}
 .note{border-left:3px solid var(--warn);padding:8px 12px;background:var(--bg);font-size:14px;margin-top:14px}
+.nrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:14px}
+.nestg{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.nestg{grid-template-columns:1fr}}
+.sheets{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.sheets.one{max-width:640px}
+.sheet{margin:0;display:grid;gap:6px}
+.sheet svg{width:100%;height:auto;display:block}
+.sheet figcaption{font-size:13px;color:var(--muted)}
+.sheet .sh{fill:var(--field);stroke:var(--muted);stroke-width:2;vector-effect:non-scaling-stroke}
+.sheet .mg{fill:none;stroke:var(--line);stroke-dasharray:6 5;stroke-width:1;vector-effect:non-scaling-stroke}
+.sheet .pt{fill:var(--ply);stroke:#c0392b;stroke-width:1.5;vector-effect:non-scaling-stroke}
+.sheet .pt1{fill:#cfa874}
+.sheet .pl{fill:#2a1f12;font-family:var(--f-mono);text-anchor:middle;dominant-baseline:central}
+.warnp{color:var(--warn);font-size:14px;margin:8px 0 0}
 </style>
 </head>
 <body>
@@ -224,7 +238,7 @@ ol,ul{padding-left:20px;margin:0;display:grid;gap:6px}
         </div>
         <div class="f"><label for="lRot">Поворот, градусы</label><input id="lRot" type="text" inputmode="decimal" autocomplete="off" value="0">
           <div class="chips" data-for="lRot"><button type="button" data-v="0">0°</button><button type="button" data-v="30">30°</button><button type="button" data-v="45">45°</button><button type="button" data-v="90">90°</button><button type="button" data-v="180">180°</button><button type="button" data-v="270">270°</button><button type="button" data-v="-30">−30°</button><button type="button" data-v="-45">−45°</button></div></div>
-        <div class="f">Цвет<div class="pal" data-for="lColor" aria-label="Цвет элемента"></div>
+        <div class="f" id="wColor">Цвет<div class="pal" data-for="lColor" aria-label="Цвет элемента"></div>
           <input id="lColor" class="hex" type="text" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Цвет HEX"></div>
         <div class="row2">
           <label class="f" for="lTarget">Где наносить<select id="lTarget"><option value="insert">На вкладыше</option><option value="glass">На крышке (гравировка)</option></select></label>
@@ -281,6 +295,27 @@ ol,ul{padding-left:20px;margin:0;display:grid;gap:6px}
       </ol>
     </section>
   </div>
+
+  <section id="nestSec">
+    <h2>Раскрой под резку и расход материала</h2>
+    <div class="nrow">
+      <label class="f" for="nQ">Коробок, шт<input id="nQ" type="text" inputmode="decimal" autocomplete="off" value="1"></label>
+      <label class="f" for="nSW">Лист фанеры, ширина<input id="nSW" type="text" inputmode="decimal" autocomplete="off" value="1520"></label>
+      <label class="f" for="nSH">Лист фанеры, длина<input id="nSH" type="text" inputmode="decimal" autocomplete="off" value="1520"></label>
+      <label class="f" for="nGap">Между деталями, мм<input id="nGap" type="text" inputmode="decimal" autocomplete="off" value="10"></label>
+      <label class="f" for="nMar">Отступ от края листа<input id="nMar" type="text" inputmode="decimal" autocomplete="off" value="10"></label>
+    </div>
+    <div class="nestg">
+      <div><div class="sheets" id="sheets"></div><p class="warnp" id="nOver" hidden></p></div>
+      <div>
+        <h3 style="margin-top:0">Фанера</h3><dl id="nPly"></dl>
+        <h3>Оргстекло</h3><dl id="nGl"></dl>
+        <h3>Длина резки</h3>
+        <div class="tbl"><table><thead><tr><th>Операция</th><th>1 коробка, м</th><th id="nQh">Всего, м</th><th>Контуров</th></tr></thead><tbody id="nCut"></tbody></table></div>
+        <p class="nm" style="margin-top:8px">Длина — по одному проходу. Если режете в несколько проходов по глубине, умножьте на число проходов. Ус 45° на каждой детали идёт одной непрерывной линией, без подъёма головки.</p>
+      </div>
+    </div>
+  </section>
 </div>
 
 <script>
@@ -365,7 +400,7 @@ function build(){
   markChips();
   const ins=y=>Y(y,-IW/2,IW/2,-IL/2,IL/2);
   parts.push(solid(ins(T),ins(T+IT),'insert',null,{insert:true}));
-  specs();art();dirty=true;save();
+  specs();art();dirty=true;save();nestSoon();
 }
 
 /* ---------- макет: вкладыш и гравировка ---------- */
@@ -409,7 +444,7 @@ function drawLayer(c,Lr,mode,px,SW,SH,ox,oy){
   const cx=Lr.fx*SW*px,cy=Lr.fy*SH*px,rot=(Lr.rot||0)*Math.PI/180;let hw,hh;c.save();c.translate(cx,cy);c.rotate(rot);
   if(Lr.type==='img'){const im=imgCache[Lr.id];const w=Lr.size*px;
     if(im&&im.naturalWidth){const h=w*(im.naturalHeight/im.naturalWidth);
-      const src=(Lr.tint||mode==='glass')?tinted(im,w,h,Lr.color):im;c.drawImage(src,-w/2,-h/2,w,h);hw=w/2;hh=h/2;}
+      const src=(Lr.tint&&mode!=='glass')?tinted(im,w,h,Lr.color):im;c.drawImage(src,-w/2,-h/2,w,h);hw=w/2;hh=h/2;}
     else{hw=w/2;hh=w/4;}}
   else{
     const fs=Math.max(1,Lr.size*px);c.font=`${Lr.weight||400} ${fs}px "Golos Text",sans-serif`;c.textAlign='center';c.textBaseline='middle';
@@ -458,16 +493,18 @@ const sig=ks=>ks.map(k=>{const e=$(k);return e?(e.type==='checkbox'?e.checked:e.
 let lastL='';
 function fillEd(){const Lr=selL();$('ed').hidden=!Lr;
   if(Lr){$('lText').value=Lr.text||'';$('lSize').value=String(Lr.size).replace('.',',');$('lWeight').value=String(Lr.weight||400);$('lColor').value=Lr.color||'#000000';$('lTarget').value=Lr.target;$('lWrap').value=Lr.wrap||0;$('lTint').checked=!!Lr.tint;$('lRot').value=String(Lr.rot||0).replace('.',',');
-    $('wText').hidden=Lr.type==='img';$('wWeight').hidden=Lr.type!=='text';$('wWrap').hidden=Lr.type!=='text';$('wTint').hidden=Lr.type!=='img';
+    $('wText').hidden=Lr.type==='img';$('wWeight').hidden=Lr.type!=='text';$('wWrap').hidden=Lr.type!=='text';edVis(Lr);
     $('lSizeL').firstChild.nodeValue=Lr.type==='img'?'Ширина логотипа, мм':'Размер шрифта, мм';}
   lastL=sig(LK);markPal();markChips();}
+// логотип на крышке — только в исходном цвете; цвет меняется у текста (и у логотипа на вкладыше, если включено перекрашивание)
+function edVis(Lr){const img=Lr.type==='img',gl=$('lTarget').value==='glass';$('wTint').hidden=!img||gl;$('wColor').hidden=img&&(gl||!$('lTint').checked);}
 function readEd(){const Lr=selL();if(!Lr)return;
   const tg=$('lTarget').value;
   if(tg!==Lr.target){Lr.target=tg;if(tg==='glass'){Lr.color='#ffffff';$('lColor').value='#ffffff';}else if(Lr.color==='#ffffff'){Lr.color='#1d1d1b';$('lColor').value='#1d1d1b';}}
   if(Lr.type!=='img')Lr.text=$('lText').value;
   const sz=num('lSize',0);if(sz>0)Lr.size=sz;
   Lr.weight=+$('lWeight').value||400;if(hexOk($('lColor').value))Lr.color=hexN($('lColor').value);Lr.wrap=Math.max(0,num('lWrap',0));Lr.rot=((num('lRot',0)%360)+360)%360>180?((num('lRot',0)%360)+360)%360-360:((num('lRot',0)%360)+360)%360;Lr.tint=$('lTint').checked;
-  lastL=sig(LK);markChips();}
+  edVis(Lr);lastL=sig(LK);markChips();}
 function pick(id){sel=id;fillEd();renderList();art();}
 function addLayer(o){const Lr=Object.assign({id:nid(),fx:.5,fy:.5,target:'insert',on:true,color:'#1d1d1b'},o);layers.push(Lr);pick(Lr.id);save();}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-sel]');if(b)pick(b.getAttribute('data-sel'));});
@@ -476,7 +513,7 @@ $('addT').onclick=()=>addLayer({type:'text',text:'Новый текст',size:10
 $('addTG').onclick=()=>{showGlass=true;$('vGlass').checked=true;addLayer({type:'text',text:'Текст на крышке',size:12,weight:500,wrap:0,target:'glass',color:'#ffffff',fy:.15});};
 function addImg(e,glass){const f=e.target.files&&e.target.files[0];if(!f)return;const rd=new FileReader();
   rd.onload=()=>{const im=new Image();im.onload=()=>{const id=nid();imgCache[id]=im;
-      addLayer(glass?{id,type:'img',src:rd.result,name:f.name,size:Math.round(Math.min(70,FW*0.3)),tint:true,color:'#ffffff',target:'glass',fy:.85}
+      addLayer(glass?{id,type:'img',src:rd.result,name:f.name,size:Math.round(Math.min(70,FW*0.3)),tint:false,color:'#ffffff',target:'glass',fy:.85}
         :{id,type:'img',src:rd.result,name:f.name,size:Math.round(Math.min(90,IW*0.4)),tint:false,color:'#1d1d1b'});e.target.value='';};
     im.onerror=()=>{showErr('Не удалось открыть файл. Подойдут SVG, PNG или JPG.');};im.src=rd.result;};rd.readAsDataURL(f);}
 $('fAdd').addEventListener('change',e=>addImg(e,false));
@@ -516,7 +553,7 @@ function readBody(){paint=$('pMat').value==='paint';if(hexOk($('pPaint').value))
   $('wPaint').hidden=!paint;$('wICol').hidden=insBg!=='color';$('wIFile').hidden=insBg!=='file';markPal();}
 
 /* ---------- синхронизация полей (события + сверка) ---------- */
-const DK=['pW','pL','pH','pT','pG','pGW','pLip','pDep','pLW','pLL','iOn','iW','iL','iT'],BK=['pMat','pPaint','iBg','iCol','vGlass'];
+const DK=['pW','pL','pH','pT','pG','pGW','pLip','pDep','pLW','pLL','iOn','iW','iL','iT','nQ','nSW','nSH','nGap','nMar'],BK=['pMat','pPaint','iBg','iCol','vGlass'];
 let lastD='',lastB='';
 function showErr(m){const b=$('eerr');b.hidden=false;b.textContent=m;}
 let lastPG=null;
@@ -566,6 +603,79 @@ function specs(){
   const plyA=(W*L+2*L*H+W*H+W*HLW)/1e6,glA=(W*lidL+W*T)/1e6;
   $('spec').innerHTML=`<dt>Габарит</dt><dd>${fm(W)} × ${fm(L)} × ${fm(H)}</dd><dt>Внутри</dt><dd>${fm(FW)} × ${fm(FH)} × ${fm(HLW-T)} (до крышки)</dd><dt>Фанера</dt><dd>${T} мм, ≈ ${plyA.toFixed(2).replace('.',',')} м²</dd><dt>Оргстекло</dt><dd>${fm(G)} мм, ≈ ${glA.toFixed(2).replace('.',',')} м²</dd><dt>Видимое поле</dt><dd>${fm(FW)} × ${fm(FH)}</dd><dt>Соединение</dt><dd>ус 45°: 4 угла + 4 ребра дна</dd>`;
 }
+
+/* ---------- раскрой на лист (MaxRects) ---------- */
+const SMk={t:0,r:1,b:1,l:1},SAk={t:1,r:1,b:1,l:1};
+function boxParts(){return[{no:1,name:'Дно',w:W,h:L,m:SAk,gr:false},{no:2,name:'Боковина',w:L,h:H,m:SMk,gr:true},{no:2,name:'Боковина',w:L,h:H,m:SMk,gr:true},
+  {no:3,name:'Торец глухой',w:W,h:H,m:SMk,gr:true},{no:4,name:'Торец низкий',w:W,h:HLW,m:SMk,gr:false}];}
+const EPS=1e-7,inside=(a,b)=>a.x>=b.x-EPS&&a.y>=b.y-EPS&&a.x+a.w<=b.x+b.w+EPS&&a.y+a.h<=b.y+b.h+EPS;
+function placeIn(S,w,h){let best=null;for(const f of S.free)for(const[rw,rh,rot]of[[w,h,false],[h,w,true]]){
+  if(rw<=f.w+EPS&&rh<=f.h+EPS){const a=Math.min(f.w-rw,f.h-rh),b=Math.max(f.w-rw,f.h-rh);
+    if(!best||a<best.a-EPS||(Math.abs(a-best.a)<=EPS&&b<best.b))best={a,b,x:f.x,y:f.y,w:rw,h:rh,rot};}}return best;}
+function commit(S,n){const keep=[],neu=[];
+  for(const f of S.free){if(n.x>=f.x+f.w-EPS||n.x+n.w<=f.x+EPS||n.y>=f.y+f.h-EPS||n.y+n.h<=f.y+EPS){keep.push(f);continue;}
+    if(n.x>f.x+EPS)neu.push({x:f.x,y:f.y,w:n.x-f.x,h:f.h});if(n.x+n.w<f.x+f.w-EPS)neu.push({x:n.x+n.w,y:f.y,w:f.x+f.w-n.x-n.w,h:f.h});
+    if(n.y>f.y+EPS)neu.push({x:f.x,y:f.y,w:f.w,h:n.y-f.y});if(n.y+n.h<f.y+f.h-EPS)neu.push({x:f.x,y:n.y+n.h,w:f.w,h:f.y+f.h-n.y-n.h});}
+  const alive=neu.filter((a,i)=>!keep.some(b=>inside(a,b))&&!neu.some((b,j)=>j!==i&&inside(a,b)&&(!inside(b,a)||j<i)));
+  S.free=keep.filter(o=>!alive.some(a=>inside(o,a))).concat(alive);}
+function pack(list,SW,SH,gap,mar,maxSheets){const U=SW-2*mar+gap,V=SH-2*mar+gap,sheets=[],over=[];
+  const items=list.slice().sort((a,b)=>Math.max(b.w,b.h)-Math.max(a.w,a.h)||b.w*b.h-a.w*a.h);
+  for(const p of items){const w=p.w+gap,h=p.h+gap;
+    if(!((w<=U+EPS&&h<=V+EPS)||(h<=U+EPS&&w<=V+EPS))){over.push(p);continue;}
+    let S=null,b=null;for(const s2 of sheets){b=placeIn(s2,w,h);if(b){S=s2;break;}}
+    if(!S){if(maxSheets&&sheets.length>=maxSheets)return null;S={free:[{x:0,y:0,w:U,h:V}],pl:[]};sheets.push(S);b=placeIn(S,w,h);}
+    commit(S,b);S.pl.push({p,x:b.x+mar,y:b.y+mar,rot:b.rot});}
+  return{sheets:sheets.map(S=>S.pl),over};}
+function perSheet(SW,SH,gap,mar){const one=boxParts(),U=SW-2*mar+gap,V=SH-2*mar+gap,A=one.reduce((s,p)=>s+(p.w+gap)*(p.h+gap),0);
+  const ok=k=>{const l=[];for(let i=0;i<k;i++)l.push(...one);const r=pack(l,SW,SH,gap,mar,1);return!!r&&!r.over.length;};
+  let lo=0,hi=Math.min(400,Math.floor(U*V/A));while(lo<hi){const md=(lo+hi+1)>>1;if(ok(md))lo=md;else hi=md-1;}return lo;}
+const m2=v=>(v/1e6).toFixed(3).replace('.',','),mm2m=v=>(v/1000).toFixed(2).replace('.',',');
+const plural=(n,a,b,c)=>{const t=n%10,h=n%100;return t===1&&h!==11?a:t>=2&&t<=4&&(h<10||h>=20)?b:c;};
+let nestKey='',nestRes=null,nestT=null;
+function nestSoon(){clearTimeout(nestT);nestT=setTimeout(()=>{try{nest();}catch(e){showErr('Ошибка раскроя: '+e.message);}},150);}
+function nest(){
+  const SW=Math.min(5000,Math.max(200,num('nSW',1520))),SH=Math.min(5000,Math.max(200,num('nSH',1520)));
+  const gap=Math.min(100,Math.max(0,num('nGap',10))),mar=Math.min(200,Math.max(0,num('nMar',10))),Q=Math.min(500,Math.max(1,Math.round(num('nQ',1))));
+  const key=[W,L,H,T,HLW,LL,LIP,G,SW,SH,gap,mar,Q].join('|');if(key===nestKey&&nestRes)return nestRes;
+  const one=boxParts(),list=[];for(let i=0;i<Q;i++)list.push(...one);
+  const r=pack(list,SW,SH,gap,mar,0);nestRes=Object.assign({SW,SH,gap,mar,Q,k:perSheet(SW,SH,gap,mar)},r);nestKey=key;renderNest(nestRes);return nestRes;}
+function nestStats(R){if(!R)return null;const one=boxParts(),sheetA=R.SW*R.SH,partsA=one.reduce((s,p)=>s+p.w*p.h,0),n=R.sheets.length;
+  const fill=R.sheets.map(pl=>Math.round(pl.reduce((s,pp)=>s+pp.p.w*pp.p.h,0)/sheetA*100));
+  const a=(W-LW)/2;
+  return{sheetA,partsA,n,fill,use:n?Math.round(partsA*R.Q/(n*sheetA)*100):0,lidA:W*LL,capA:W*T,
+    ply:2*(W+L)+4*(L+H)+2*(W+H)+2*(W+HLW),mit:2*(W+L)+2*(L+2*H)+(W+2*H)+(W+2*HLW),gr:2*L+W,
+    lid:LW+W+2*(LL-a)+2*a*Math.SQRT2,cap:W+(W-2*T)+2*T*Math.SQRT2};}
+function renderNest(R){const S=nestStats(R),Q=R.Q,SW=R.SW,SH=R.SH;
+  const show=R.sheets.slice(0,12);
+  $('sheets').classList.toggle('one',show.length===1);$('sheets').innerHTML=show.map((pl,i)=>`<figure class="sheet"><svg viewBox="0 0 ${SW} ${SH}" role="img" aria-label="Лист ${i+1}"><rect class="sh" x="0" y="0" width="${SW}" height="${SH}"/>`+
+    (R.mar>0?`<rect class="mg" x="${R.mar}" y="${R.mar}" width="${SW-2*R.mar}" height="${SH-2*R.mar}"/>`:'')+
+    pl.map(pp=>{const dw=pp.rot?pp.p.h:pp.p.w,dh=pp.rot?pp.p.w:pp.p.h,cx=pp.x+dw/2,cy=pp.y+dh/2,vert=dh>dw*1.3;
+      const sh=Math.min(dw,dh),lg=Math.max(dw,dh);let t=`№${pp.p.no} ${fm(pp.p.w)}×${fm(pp.p.h)}`;let fs=Math.min(64,sh*0.5,lg/(t.length*0.8));
+      if(fs<16){t=`№${pp.p.no}`;fs=Math.min(64,sh*0.6,lg/2.2);}
+      return `<rect class="pt pt${pp.p.no}" x="${pp.x}" y="${pp.y}" width="${dw}" height="${dh}"><title>№${pp.p.no} ${esc(pp.p.name)} ${fm(pp.p.w)} × ${fm(pp.p.h)} мм</title></rect>`+
+        `<text class="pl" x="${cx}" y="${cy}" font-size="${fs.toFixed(1)}"${vert?` transform="rotate(-90 ${cx} ${cy})"`:''}>${t}</text>`;}).join('')+
+    `</svg><figcaption>Лист ${i+1} из ${S.n} · ${pl.length} дет. · заполнен на ${S.fill[i]}%</figcaption></figure>`).join('')+
+    (S.n>show.length?`<p class="nm">…и ещё ${S.n-show.length} ${plural(S.n-show.length,'лист','листа','листов')} такой же раскладки.</p>`:'');
+  const ov=$('nOver');ov.hidden=!R.over.length;
+  if(R.over.length)ov.textContent=`Не помещаются на лист ${fm(SW)} × ${fm(SH)}: `+[...new Set(R.over.map(p=>`№${p.no} ${p.name} ${fm(p.w)}×${fm(p.h)}`))].join(', ')+'. Нужен лист больше или склейка.';
+  $('nPly').innerHTML=`<dt>Лист</dt><dd>${fm(SW)} × ${fm(SH)} мм = ${m2(S.sheetA)} м²</dd>`+
+    `<dt>Нужно листов</dt><dd>${S.n} на ${Q} шт${S.n?` (последний заполнен на ${S.fill[S.n-1]}%)`:''}</dd>`+
+    `<dt>С одного листа</dt><dd>${R.k} ${plural(R.k,'коробка','коробки','коробок')}</dd>`+
+    `<dt>Детали 1 коробки</dt><dd>${m2(S.partsA)} м²</dd>`+
+    `<dt>На 1 коробку</dt><dd>${R.k?`1/${R.k} листа ≈ ${m2(S.sheetA/R.k)} м²`:'—'}</dd>`+
+    (Q>1?`<dt>Детали ${Q} шт</dt><dd>${m2(S.partsA*Q)} м²</dd>`:'')+
+    `<dt>Использование</dt><dd>${S.use}% от ${S.n} ${plural(S.n,'листа','листов','листов')}</dd>`;
+  const same=Math.abs(G-LIP)<1e-6;
+  $('nGl').innerHTML=`<dt>Крышка ${fm(G)} мм</dt><dd>${fm(W)} × ${fm(LL)} → ${m2(S.lidA)} м²${Q>1?` · ${Q} шт: ${m2(S.lidA*Q)} м²`:''}</dd>`+
+    `<dt>Накладка ${fm(LIP)} мм</dt><dd>${fm(W)} × ${fm(T)} → ${m2(S.capA)} м²${Q>1?` · ${Q} шт: ${m2(S.capA*Q)} м²`:''}</dd>`+
+    (same?`<dt>Итого ${fm(G)} мм</dt><dd>${m2((S.lidA+S.capA)*Q)} м²</dd>`:'')+
+    `<dt></dt><dd style="font-family:var(--f-body);color:var(--muted);font-size:13px">по габаритному прямоугольнику детали, без отхода на рез</dd>`;
+  $('nQh').textContent=`${Q} шт, м`;
+  const rows=[['Фанера — сквозной рез (красный)',S.ply,5],['Фанера — ус 45° (синий)',S.mit,5],['Фанера — паз под стекло (зелёный)',S.gr,3],
+    ['Оргстекло — крышка',S.lid,1],['Оргстекло — накладка',S.cap,1]];
+  $('nCut').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td class="n">${mm2m(r[1])}</td><td class="n">${mm2m(r[1]*Q)}</td><td class="n">${r[2]*Q}</td></tr>`).join('')+
+    `<tr><th>Фанера всего</th><td class="n"><b>${mm2m(S.ply+S.mit+S.gr)}</b></td><td class="n"><b>${mm2m((S.ply+S.mit+S.gr)*Q)}</b></td><td class="n">${13*Q}</td></tr>`+
+    `<tr><th>Оргстекло всего</th><td class="n"><b>${mm2m(S.lid+S.cap)}</b></td><td class="n"><b>${mm2m((S.lid+S.cap)*Q)}</b></td><td class="n">${2*Q}</td></tr>`;}
 
 /* ---------- 3D ---------- */
 let yaw=-0.62,pitch=0.62,zoom=1,open=0,ex=0,exT=0;
@@ -720,11 +830,13 @@ async function stencil(s,sizePt,wt){
   const a=x.getImageData(0,0,w,h).data,rb=Math.ceil(w/8),u=new Uint8Array(rb*h).fill(255);
   for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++)if(a[(yy*w+xx)*4+3]>110)u[yy*rb+(xx>>3)]&=~(128>>(xx&7));
   const r=await u8bin(u,true);return{w,h,data:r.data,flate:r.flate,wPt:w/dpi*72,hPt:h/dpi*72};}
-async function sheetPage(title,items,head){
-  // items: {w,h,draw(ops,ox,oy)} — простая укладка рядами
-  const gap=15,mar=15,top=36,maxW=Math.max(500,...items.map(i=>i.w))+0;let x=mar,y=mar+top,rowH=0,maxX=200;const pos=[];
+async function sheetPage(title,items,head,sheet){
+  // items: {w,h,draw(ops,ox,oy)} — простая укладка рядами; sheet={w,h} — детали уже разложены по листу (it.x, it.y)
+  const gap=15,mar=15,top=36;const pos=[];let PW,PH;
+  if(sheet){items.forEach(it=>pos.push([it,mar+it.x,mar+top+it.y]));PW=Math.max(sheet.w+2*mar,200);PH=mar+top+sheet.h+mar;}
+  else{const maxW=Math.max(500,...items.map(i=>i.w));let x=mar,y=mar+top,rowH=0,maxX=200;
   items.slice().sort((a,b)=>b.h-a.h).forEach(it=>{if(x+it.w>mar+Math.min(1500,Math.max(maxW,1000))&&x>mar){x=mar;y+=rowH+gap;rowH=0;}pos.push([it,x,y]);x+=it.w+gap;rowH=Math.max(rowH,it.h);maxX=Math.max(maxX,x-gap+mar);});
-  const PW=maxX,PH=y+rowH+mar;
+  PW=maxX;PH=y+rowH+mar;}
   const P=(px,py)=>`${(px*KP).toFixed(3)} ${((PH-py)*KP).toFixed(3)}`;
   const labels=[];
   const ops={c:'',col(r,gg,b){this.c+=`${r} ${gg} ${b} RG\n`;},w(v){this.c+=`${v} w\n`;},dash(on){this.c+=on?'[3 2] 0 d\n':'[] 0 d\n';},
@@ -733,6 +845,7 @@ async function sheetPage(title,items,head){
   ops.text(mar,mar+5,10,title,false,700);
   (head||['Единицы — мм, масштаб 1:1.',
     'Надписи вставлены картинкой — станок их не режет.']).forEach((t,i)=>ops.text(mar,mar+11+i*5,7,t));
+  if(sheet){ops.w(0.3);ops.col(.55,.55,.55);ops.dash(true);ops.poly([[mar,mar+top],[mar+sheet.w,mar+top],[mar+sheet.w,mar+top+sheet.h],[mar,mar+top+sheet.h]],true);ops.dash(false);}
   pos.forEach(([it,ox,oy])=>it.draw(ops,ox,oy));
   const images=[];let k=0;
   for(const lb of labels){const st=await stencil(lb.s,lb.size,lb.wt);const nm='T'+(k++);
@@ -741,18 +854,29 @@ async function sheetPage(title,items,head){
     images.push({name:nm,w:st.w,h:st.h,data:st.data,mask:true,flate:st.flate});}
   return{w:PW*KP,h:PH*KP,content:ops.c,images};}
 const HEAD_PLY=['Единицы — мм, масштаб 1:1. Детали кладутся ЛИЦЕВОЙ пластью ВНИЗ.',
-  'КРАСНЫЙ — сквозной рез снаружи контура.   СИНИЙ — ус 45°: V-фреза 90°, вершина по линии, глубина = толщина фанеры.',
+  'КРАСНЫЙ — сквозной рез снаружи контура.   СИНИЙ — ус 45°: V-фреза 90°, вершина по линии, глубина = толщина фанеры. Ус на детали — одна непрерывная линия.',
   'ЗЕЛЁНЫЙ — паз под стекло.   СЕРЫЙ пунктир — справочно, не резать.   ВЕРХ — прямая верхняя кромка (без уса).',
   'Номера деталей — как в задании на стр. 1. Надписи вставлены картинкой — станок их не режет.'];
-function plyItem(no,w,h,m,groove,label){return{w,h,draw(o,x,y){
-  o.w(0.4);o.dash(false);o.col(1,0,0);o.poly([[x,y],[x+w,y],[x+w,y+h],[x,y+h]],true);
+function plyItem(no,w,h,m,groove,label,rot){return{w:rot?h:w,h:rot?w:h,draw(o,x,y){
+  // rot — деталь повёрнута на 90° на листе
+  const P=(u,v)=>rot?[x+h-v,y+u]:[x+u,y+v],R=(u0,v0,u1,v1)=>[P(u0,v0),P(u1,v0),P(u1,v1),P(u0,v1)];
+  o.w(0.4);o.dash(false);o.col(1,0,0);o.poly(R(0,0,w,h),true);
+  // ус 45°: все синие кромки детали — ОДНОЙ непрерывной линией, станок не поднимает головку на углах
   o.col(0,0,1);o.w(0.8);
-  if(m.t)o.poly([[x,y],[x+w,y]]);if(m.r)o.poly([[x+w,y],[x+w,y+h]]);if(m.b)o.poly([[x,y+h],[x+w,y+h]]);if(m.l)o.poly([[x,y],[x,y+h]]);
-  o.w(0.3);o.col(.55,.55,.55);o.dash(true);const ix0=x+(m.l?T:0),ix1=x+w-(m.r?T:0),iy0=y+(m.t?T:0),iy1=y+h-(m.b?T:0);o.poly([[ix0,iy0],[ix1,iy0],[ix1,iy1],[ix0,iy1]],true);o.dash(false);
-  if(groove){o.col(0,.6,0);o.w(0.5);const g0=y+LIP+G-GW,g1=y+LIP+G;o.poly([[x,g0],[x+w,g0],[x+w,g1],[x,g1]],true);}
-  const fs=Math.max(6,Math.min(16,h*0.2));
-  o.text(x+w/2,y+h/2+fs*0.15,fs,`№${no}  ${label}  ${fm(w)} × ${fm(h)}`,true,700);
-  if(!m.t)o.text(x+4,y+(groove?LIP+G+4.5:5),5,'ВЕРХ ↑');}};}
+  const C=[[0,0],[w,0],[w,h],[0,h]],E=[m.t,m.r,m.b,m.l].map(Boolean);
+  if(E.every(Boolean))o.poly(C.map(c=>P(...c)),true);
+  else{const k=E.indexOf(false);let run=[];
+    for(let s=1;s<=4;s++){const i=(k+s)%4;if(E[i]){if(!run.length)run.push(C[i]);run.push(C[(i+1)%4]);}else if(run.length){o.poly(run.map(c=>P(...c)));run=[];}}
+    if(run.length)o.poly(run.map(c=>P(...c)));}
+  o.w(0.3);o.col(.55,.55,.55);o.dash(true);o.poly(R(m.l?T:0,m.t?T:0,w-(m.r?T:0),h-(m.b?T:0)),true);o.dash(false);
+  if(groove){o.col(0,.6,0);o.w(0.5);o.poly(R(0,LIP+G-GW,w,LIP+G),true);}
+  const c=P(w/2,h/2);
+  if(!rot){const fs=Math.max(6,Math.min(16,h*0.2));
+    o.text(c[0],c[1]+fs*0.15,fs,`№${no}  ${label}  ${fm(w)} × ${fm(h)}`,true,700);
+    if(!m.t)o.text(x+4,y+(groove?LIP+G+4.5:5),5,'ВЕРХ ↑');}
+  else{const fs=Math.max(5,Math.min(16,h*0.35));
+    o.text(c[0],c[1],fs,`№${no}`,true,700);if(h>=24)o.text(c[0],c[1]+fs*0.6+4,4.5,`${fm(w)}×${fm(h)}`,true);
+    if(!m.t){const q=P(w*0.25,groove?LIP+G+11:11);o.text(q[0],q[1],5,'ВЕРХ →',true);}}}};}
 function notesPages(){
   const PW=1654,PHp=2339,M=110,pages=[];let c,y,pg=0;
   const np=()=>{const cn=document.createElement('canvas');cn.width=PW;cn.height=PHp;c=cn.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,PW,PHp);pages.push(cn);y=M;pg++;
@@ -786,6 +910,11 @@ function notesPages(){
   if(insOn)rows.push([7,'Вкладыш','по заказу',`${fm(IW)} × ${fm(IL)}`,1,`Толщина до ${fm(IT)} мм, макет — PNG 300 dpi`]);
   table([{t:'№',w:.06},{t:'Деталь',w:.2},{t:'Материал',w:.16},{t:'Размер, мм',w:.2},{t:'Шт',w:.06},{t:'Операции',w:.32}],rows);
   para('Размеры фанерных деталей — по наружной (лицевой) пласти. Внутренняя пласть меньше на толщину фанеры с каждой стороны, где есть ус.',23,400,'#4b5560');
+  {const NR=nest(),S=nestStats(NR);if(S){h2('Расход материала и длина резки');
+    list([`Фанера ${fm(T)} мм: ${NR.Q} шт → ${S.n} ${plural(S.n,'лист','листа','листов')} ${fm(NR.SW)} × ${fm(NR.SH)} мм (использование ${S.use}%). С одного листа выходит ${NR.k} ${plural(NR.k,'коробка','коробки','коробок')}. Раскладка — на страницах «ФАНЕРА … лист».`,
+      `Оргстекло ${fm(G)} мм (крышка): ${m2(S.lidA*NR.Q)} м². Оргстекло ${fm(LIP)} мм (накладка): ${m2(S.capA*NR.Q)} м².`,
+      `Длина резки на ${NR.Q} шт: рез фанеры ${mm2m(S.ply*NR.Q)} м, ус 45° ${mm2m(S.mit*NR.Q)} м, паз ${mm2m(S.gr*NR.Q)} м, оргстекло ${mm2m((S.lid+S.cap)*NR.Q)} м.`,
+      'Ус на каждой детали — одна непрерывная синяя линия: станок проходит её без подъёма головки.'],false);}}
   h2('Цвета линий в файле');
   [[[220,0,0],false,'Красный — сквозной рез по контуру. Фреза снаружи линии.'],[[0,0,230],false,'Синий — ус 45°. V-фреза 90°, вершина идёт по синей линии.'],[[0,150,0],false,'Зелёный — паз под стекло (выборка).'],[[140,140,140],true,'Серый пунктир — справочно: где кончится фаска на верхней пласти. Не резать.'],[[0,0,0],false,'Чёрные надписи — номер детали, размер и «ВЕРХ» (прямая верхняя кромка). Вставлены картинкой, станок их не режет.']].forEach(([cl,dash,t])=>{
     need(40);c.strokeStyle=`rgb(${cl})`;c.lineWidth=5;c.setLineDash(dash?[14,10]:[]);c.beginPath();c.moveTo(M,y+16);c.lineTo(M+70,y+16);c.stroke();c.setLineDash([]);para(t,25,400,'#1f2a33',96,6);});
@@ -832,7 +961,12 @@ $('xPdf').onclick=async()=>{const btn=$('xPdf');btn.disabled=true;const old=btn.
     if(document.fonts&&document.fonts.ready)await document.fonts.ready;
     dirty=true;draw();
     const pages=notesPages().map((cn,i)=>{const d=atob(cn.toDataURL('image/jpeg',0.9).split(',')[1]);const w=595.28,h=841.89;return{w,h,content:`q ${w} 0 0 ${h} 0 0 cm /Im${i} Do Q\n`,images:[{name:'Im'+i,w:cn.width,h:cn.height,data:d}]};});
-    const M={t:0,r:1,b:1,l:1};
+    const M={t:0,r:1,b:1,l:1},NR=nest();
+    if(NR&&NR.sheets.length&&!NR.over.length){
+      for(let i=0;i<NR.sheets.length;i++){const pl=NR.sheets[i];
+        pages.push(await sheetPage(`ФАНЕРА ${fm(T)} мм — лист ${i+1} из ${NR.sheets.length} (${fm(NR.SW)} × ${fm(NR.SH)}) — коробка ${fm(W)} × ${fm(L)} × ${fm(H)}, ${NR.Q} шт — ${pl.length} дет.`,
+          pl.map(pp=>Object.assign(plyItem(pp.p.no,pp.p.w,pp.p.h,pp.p.m,pp.p.gr,pp.p.name,pp.rot),{x:pp.x,y:pp.y})),HEAD_PLY,{w:NR.SW,h:NR.SH}));}
+    }else
     pages.push(await sheetPage(`ФАНЕРА ${fm(T)} мм — коробка ${fm(W)} × ${fm(L)} × ${fm(H)} — 5 деталей`,[
       plyItem(1,W,L,{t:1,r:1,b:1,l:1},false,'Дно'),plyItem(2,L,H,M,true,'Боковина'),plyItem(2,L,H,M,true,'Боковина'),plyItem(3,W,H,M,true,'Торец глухой'),plyItem(4,W,HLW,M,false,'Торец низкий')],HEAD_PLY));
     const tw=LW,lidL=LL;
