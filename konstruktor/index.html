@@ -308,7 +308,6 @@ body.client .stage{position:relative;top:0}
     <h2>Ваша коробка</h2>
     <div class="cc" id="ccBody"></div>
     <p class="nm" style="margin-top:12px">Крутите модель пальцем или мышью. Ползунок «Крышка» показывает, как она открывается.</p>
-    <p style="margin:12px 0 0"><a id="ccFull" href="#" style="color:var(--accent);font-size:14px">Открыть полный конструктор →</a></p>
   </section>
 
   <div class="grid">
@@ -823,7 +822,6 @@ function shotCanvas(){dirty=true;draw();const pad=40,w=1200,ih=Math.round(w*cv.h
   x.font='400 26px "Golos Text",sans-serif';x.fillStyle='#4b5560';
   x.fillText(`Фанера ${fm(T)} мм · ${paint?'покраска':'тон '+tone.n} · крышка оргстекло ${fm(G)} мм, ${gtint.n}`+(insOn?` · вкладыш ${fm(IW)}×${fm(IL)}×${fm(IT)}`:''),pad,ih+84);
   return c;}
-$('ccFull').onclick=e=>{e.preventDefault();location.href=shareState();location.reload();};
 $('shareC').onclick=()=>doShare(shareState()+'&view=1',l=>`Ваша коробка ${fm(W)}×${fm(L)}×${fm(H)} мм — посмотрите в 3D, можно покрутить и открыть крышку: ${l}`);
 $('share').onclick=()=>doShare(shareState(),l=>`Коробка ${fm(W)}×${fm(L)}×${fm(H)} мм — посмотреть и покрутить: ${l}`);
 async function doShare(link,mk){const txt=mk(link);
