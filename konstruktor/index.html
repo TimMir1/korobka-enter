@@ -636,7 +636,15 @@ const SK='korobka-konstruktor-v2',FK=DK.concat(BK);
 function save(){if(CLIENT)return;try{const o={layers:layers.map(Lr=>{const c=Object.assign({},Lr);delete c._bb;return c;}),sel};
   FK.forEach(k=>{const e=$(k);o[k]=e.type==='checkbox'?e.checked:e.value;});
   try{localStorage.setItem(SK,JSON.stringify(Object.assign({bgSrc},o)));}catch(e){localStorage.setItem(SK,JSON.stringify(o));}}catch(e){}}
-function load(){let o=null;try{o=JSON.parse(localStorage.getItem(SK)||'null');}catch(e){}
+let DEFV={};
+const b64u=str=>btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const unb64u=t=>decodeURIComponent(escape(atob(t.replace(/-/g,'+').replace(/_/g,'/'))));
+// короткая ссылка: только изменённые поля и тексты
+function fromShort(t){const q=JSON.parse(unb64u(t)),o={};FK.forEach(k=>{o[k]=q.f&&q.f[k]!=null?q.f[k]:DEFV[k];});
+  o.layers=(q.l||[]).map((a,i)=>({id:'s'+i,type:'text',text:a.t||'',size:a.s||10,weight:a.w||500,color:a.c||'#1d1d1b',target:a.g?'glass':'insert',fx:a.x!=null?a.x:.5,fy:a.y!=null?a.y:.5,rot:a.r||0,wrap:a.p||0,on:true}));return o;}
+function load(){FK.forEach(k=>{const e=$(k);DEFV[k]=e.type==='checkbox'?e.checked:e.value;});
+  let o=null;try{o=JSON.parse(localStorage.getItem(SK)||'null');}catch(e){}
+  try{const m=location.hash.match(/[#&]k=([A-Za-z0-9_-]+)/);if(m){o=fromShort(m[1]);history.replaceState(null,'',location.pathname);}}catch(e){}
   try{const m=location.hash.match(/c=([^&]+)/);if(m){o=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1])))));history.replaceState(null,'',location.pathname);}}catch(e){}
   if(o){FK.forEach(k=>{const e=$(k);if(o[k]==null||!e)return;if(e.type==='checkbox')e.checked=!!o[k];else e.value=o[k];});
     layers=Array.isArray(o.layers)&&o.layers.length?o.layers:defLayers();
@@ -814,21 +822,13 @@ $('fsOpen').onclick=()=>setFull(true);$('fsClose').onclick=()=>setFull(false);
 addEventListener('keydown',e=>{if(e.key==='Escape'&&stage.classList.contains('full'))setFull(false);});
 $('fab').onclick=()=>{const cfg=$('cfg'),r=cfg.getBoundingClientRect();if(r.top<innerHeight*0.4)stage.scrollIntoView({behavior:'smooth',block:'start'});else cfg.scrollIntoView({behavior:'smooth',block:'start'});};
 addEventListener('scroll',()=>{const r=$('cfg').getBoundingClientRect();$('fab').textContent=r.top<innerHeight*0.4?'↑ К коробке':'⚙ Настроить коробку ↓';},{passive:true});
-// картинки в ссылке: уменьшаем, чтобы ссылка влезла в мессенджер (до ~60 тыс. символов)
-const imgOf=src=>new Promise(r=>{const im=new Image();im.onload=()=>r(im);im.onerror=()=>r(null);im.src=src;});
-async function shrink(src,max,photo){const im=await imgOf(src);if(!im||!im.naturalWidth)return src;
-  const k=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.naturalWidth*k));c.height=Math.max(1,Math.round(im.naturalHeight*k));
-  c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-  let out=photo?c.toDataURL('image/jpeg',0.72):c.toDataURL('image/webp',0.82);if(!photo&&!out.startsWith('data:image/webp'))out=c.toDataURL('image/png');
-  return out.length<src.length?out:src;}
-async function shareState(){const base=location.origin+location.pathname+'#c=';let link='';
-  for(const mx of[420,300,200,130,0]){
-    const ls=[];for(const Lr of layers){const c=Object.assign({},Lr);delete c._bb;if(c.type==='img'){if(!mx||!c.src)continue;c.src=await shrink(c.src,mx,false);}ls.push(c);}
-    const o={layers:ls};FK.forEach(k=>{const e=$(k);o[k]=e.type==='checkbox'?e.checked:e.value;});
-    if(mx&&insBg==='file'&&bgSrc)o.bgSrc=await shrink(bgSrc,mx*1.6,true);
-    link=base+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(o)))));
-    if(link.length<60000)return{link,img:!!mx};}
-  return{link,img:false};}
+// короткая ссылка: только то, что отличается от настроек по умолчанию, и тексты. Картинки в ссылку не входят — они на снимке.
+function shareState(){const f={};FK.forEach(k=>{const e=$(k),v=e.type==='checkbox'?e.checked:e.value;if(v!==DEFV[k])f[k]=v;});
+  const r3=v=>Math.round(v*1000)/1000;
+  const l=layers.filter(Lr=>Lr.type!=='img'&&Lr.on!==false).map(Lr=>{const a={t:Lr.text,s:Lr.size,c:Lr.color};if(Lr.weight&&Lr.weight!==500)a.w=Lr.weight;if(Lr.target==='glass')a.g=1;
+    if(Lr.fx!==.5)a.x=r3(Lr.fx);if(Lr.fy!==.5)a.y=r3(Lr.fy);if(Lr.rot)a.r=Lr.rot;if(Lr.wrap)a.p=Lr.wrap;return a;});
+  const q={};if(Object.keys(f).length)q.f=f;if(l.length)q.l=l;
+  return{link:location.origin+location.pathname+'#k='+b64u(JSON.stringify(q)),img:false};}
 function shotCanvas(){dirty=true;draw();const pad=40,w=1200,ih=Math.round(w*cv.height/cv.width),c=document.createElement('canvas');c.width=w;c.height=ih+170;const x=c.getContext('2d');
   x.fillStyle='#f4f2ed';x.fillRect(0,0,c.width,c.height);x.drawImage(cv,0,0,w,ih);
   x.fillStyle='#1f2a33';x.font='700 40px "Golos Text",sans-serif';x.textBaseline='top';x.fillText(`Коробка ${fm(W)} × ${fm(L)} × ${fm(H)} мм`,pad,ih+28);
@@ -837,9 +837,7 @@ function shotCanvas(){dirty=true;draw();const pad=40,w=1200,ih=Math.round(w*cv.h
   return c;}
 $('shareC').onclick=()=>doShare('&view=1',l=>`Ваша коробка ${fm(W)}×${fm(L)}×${fm(H)} мм — посмотрите в 3D, можно покрутить и открыть крышку: ${l}`);
 $('share').onclick=()=>doShare('',l=>`Коробка ${fm(W)}×${fm(L)}×${fm(H)} мм — посмотреть и покрутить: ${l}`);
-async function doShare(suf,mk){let st;try{st=await shareState();}catch(e){$('xMsg').textContent='Не удалось собрать ссылку: '+e.message;return;}
-  const link=st.link+suf,txt=mk(link);
-  if(!st.img&&layers.some(Lr=>Lr.type==='img'))$('xMsg').textContent='Картинки слишком большие для ссылки — в ней только тексты. Логотип виден на прикреплённом снимке.';
+async function doShare(suf,mk){const st=shareState(),link=st.link+suf,txt=mk(link);
   try{const c=shotCanvas();const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.9));const file=new File([blob],`korobka-${r1(W)}x${r1(L)}x${r1(H)}.jpg`,{type:'image/jpeg'});
     if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Коробка',text:txt});return;}
     if(navigator.share){await navigator.share({title:'Коробка',text:txt,url:link});return;}
