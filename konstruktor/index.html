@@ -502,7 +502,9 @@ function readBody(){paint=$('pMat').value==='paint';if(hexOk($('pPaint').value))
 const DK=['pW','pL','pH','pT','pG','pGW','pLip','iOn','iW','iL','iT'],BK=['pMat','pPaint','iBg','iCol','vGlass'];
 let lastD='',lastB='';
 function showErr(m){const b=$('eerr');b.hidden=false;b.textContent=m;}
+let lastPG=null;
 function sync(){try{
+  const pg=$('pG').value;if(pg!==lastPG){if(lastPG!==null)$('pGW').value=pg;lastPG=pg;}
   const d=sig(DK),b=sig(BK),l=sig(LK);
   if(b!==lastB){lastB=b;readBody();if(d===lastD){art();save();}}
   if(d!==lastD){lastD=d;build();}
@@ -831,7 +833,7 @@ $('xPdf').onclick=async()=>{const btn=$('xPdf');btn.disabled=true;const old=btn.
   btn.disabled=false;btn.textContent=old;};
 
 /* ---------- старт ---------- */
-load();readBody();lastB=sig(BK);lastD=sig(DK);
+load();lastPG=$('pG').value;readBody();lastB=sig(BK);lastD=sig(DK);
 build();fillEd();renderList();
 document.fonts&&document.fonts.ready.then(()=>art());
 loop();
