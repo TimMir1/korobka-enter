@@ -487,7 +487,7 @@ function renderList(){
   const rev=layers.slice().reverse();
   $('lst').innerHTML=rev.filter(Lr=>Lr.target!=='glass').map(row).join('')||'<p class="nm" style="padding:4px">Пока пусто — добавь текст или логотип.</p>';
   $('lstG').innerHTML=rev.filter(Lr=>Lr.target==='glass').map(row).join('')||'<p class="nm" style="padding:4px">Пока пусто. Добавь текст или логотип — они будут выгравированы на стекле крышки.</p>';
-  const Lr=selL();(Lr&&Lr.target==='glass'?$('lstG'):$('lst')).after($('ed'));}
+  const Lr=selL(),host=Lr&&Lr.target==='glass'?$('lstG'):$('lst'),ed=$('ed');if(host.nextElementSibling!==ed){const fe=document.activeElement;host.after(ed);if(fe&&ed.contains(fe))fe.focus();}}
 const LK=['lText','lSize','lWeight','lColor','lTarget','lWrap','lTint','lRot'];
 const sig=ks=>ks.map(k=>{const e=$(k);return e?(e.type==='checkbox'?e.checked:e.value):'';}).join('\u0001');
 let lastL='';
