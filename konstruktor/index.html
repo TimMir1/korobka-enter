@@ -187,7 +187,7 @@ ol,ul{padding-left:20px;margin:0;display:grid;gap:6px}
         </div>
         <div class="row2">
           <label class="f" for="pGW">Ширина паза под стекло<input id="pGW" type="text" inputmode="decimal" autocomplete="off" value="4,2"></label>
-          <label class="f" for="pLip">От верха крышки до верха коробки<input id="pLip" type="text" inputmode="decimal" autocomplete="off" value="6"></label>
+          <label class="f" for="pLip">Над пазом до верха коробки, мм<input id="pLip" type="text" inputmode="decimal" autocomplete="off" value="6"></label>
         </div>
         <div class="row2">
           <label class="f" for="pDep">Глубина паза (фреза вниз), мм<input id="pDep" type="text" inputmode="decimal" autocomplete="off" value="4"></label>
@@ -395,15 +395,15 @@ function solid(A,B,mat,ex,extra){
 
 function build(){
   W=num('pW',294);L=num('pL',354);H=num('pH',38);T=Math.min(30,Math.max(2,num('pT',10)));G=Math.min(15,Math.max(1,num('pG',4)));
-  GW=Math.min(G+3,Math.max(0.5,num('pGW',G)));LIP=Math.min(60,Math.max(0.5,GW-G+0.5,num('pLip',6)));
-  W=Math.min(1500,Math.max(60,W));L=Math.min(1500,Math.max(60,L));H=Math.min(300,Math.max(T+LIP+G+3,H));
+  GW=Math.min(G+3,Math.max(0.5,num('pGW',G)));LIP=Math.min(60,Math.max(0.5,num('pLip',6)));
+  W=Math.min(1500,Math.max(60,W));L=Math.min(1500,Math.max(60,L));H=Math.min(300,Math.max(T+LIP+Math.max(GW,G)+3,H));
   DEP=Math.min(T-1,Math.max(0.5,num('pDep',4)));
-  HW=W/2;HL=L/2;HLW=H-LIP-G;D=T-DEP;FW=W-2*T;FH=L-2*T;
+  HW=W/2;HL=L/2;HLW=H-LIP-GW;D=T-DEP;FW=W-2*T;FH=L-2*T;
   LWa=W-2*D;LLa=L-D;const mW=Math.min(LWa,FW+1),mL=Math.min(LLa,L-T+1);const dW=Math.max(mW,LWa-2),dL=Math.max(mL,LLa-1);LW=Math.min(LWa,Math.max(mW,num('pLW',dW)));LL=Math.min(LLa,Math.max(mL,num('pLL',dL)));
   $('pLW').placeholder='авто '+fm(dW);$('pLL').placeholder='авто '+fm(dL);
   $('inInfo').textContent=`Внутри: ${fm(FW)} × ${fm(FH)} мм, высота до крышки ${fm(HLW-T)} мм (до верха стенок ${fm(H-T)} мм)`;
   OPEN=$('pOpen').value==='hole'?'hole':'cap';$('wHole').hidden=OPEN!=='hole';CAP=OPEN==='cap'||$('pHCap').checked;CAPM=$('pCapM').value==='ply'?'ply':'glass';$('wCapM').hidden=!CAP;
-  $('capInfo').textContent=CAP?`Накладка: ${capMat()} мм. Толщина равна полю «От верха крышки до верха коробки».`:'';
+  {const gp=LIP+GW-G,df=r1(gp-LIP);$('capInfo').textContent=CAP?`Накладка: ${capMat()} мм. Над крышкой зазор ${fm(gp)} мм`+(Math.abs(df)>0.001?` — накладка встанет ${df>0?'ниже':'выше'} верха коробки на ${fm(Math.abs(df))} мм.`:', накладка вровень с верхом.'):'';}
   HD=Math.min(Math.max(3,FW-10),Math.max(3,num('pHD',15)));const hoA=T+HD/2+5;HO=Math.min(LL-HD/2-2,Math.max(HD/2+2,num('pHO',hoA)));$('pHO').placeholder='авто '+fm(hoA);
   $('holeInfo').innerHTML=OPEN!=='hole'?'':`Отверстие Ø${fm(HD)} мм по центру крышки, центр в ${fm(HO)} мм от переднего края`+(HO-HD/2<T?' — <b style="color:#b3261e">частично над низким торцом, палец не пройдёт насквозь</b>':` (над полостью коробки, от торца ${fm(HO-HD/2-T)} мм)`)+'.';
   const X=(x,z0,z1,y0,y1)=>[[x,y0,z0],[x,y0,z1],[x,y1,z1],[x,y1,z0]];
@@ -437,7 +437,7 @@ function build(){
   $('iMax').textContent=`Внутри помещается до ${fm(FW)} × ${fm(FH)} мм, высота до низа крышки ${fm(HLW-T)} мм.`;
   const gap=HLW-T-IT,gcls=gap<1?'bad':gap<2?'warn':'',gtx=`Зазор от верха вкладыша до низа крышки: ${fm(gap)} мм`+(gap<1?' — слишком мало, крышка может тереть':gap<2?' — впритык':'');
   $('iGap').textContent=gtx;$('iGap').className='gap '+gcls;const bd=$('gapBadge');bd.hidden=!insOn;bd.textContent=`Зазор до крышки: ${fm(gap)} мм`;bd.className='badge '+gcls;
-  $('grInfo').textContent=`Паз ${fm(GW)} мм под стекло ${fm(G)} мм (${GW<G?'паз УЖЕ стекла на '+fm(G-GW)+' мм':'люфт '+fm(GW-G)+' мм'}). Крышка утоплена на ${fm(LIP)} мм ниже верха, над пазом остаётся ${fm(LIP-(GW-G))} мм фанеры. Высота низкого торца ${fm(HLW)} мм.`;
+  $('grInfo').textContent=`Паз ${fm(GW)} мм под стекло ${fm(G)} мм (${GW<G?'паз УЖЕ стекла на '+fm(G-GW)+' мм':'люфт '+fm(GW-G)+' мм'}). Паз отсчитывается от верха: над пазом ровно ${fm(LIP)} мм фанеры, паз ${fm(H-LIP-GW)}–${fm(H-LIP)} мм от низа. Крышка лежит на дне паза, от её верха до верха коробки ${fm(LIP+GW-G)} мм. Высота низкого торца ${fm(HLW)} мм.`;
   {const sw=(LWa-LW)/2,sl=LLa-LL,uw=num('pLW',LWa),ul=num('pLL',LLa),R=v=>'<b style="color:#b3261e">'+v+'</b>';
    const msg=[];if(uw>LWa+0.001||ul>LLa+0.001)msg.push(R('Больше, чем позволяет паз — урезал.'));
    if(uw<FW+0.999)msg.push(R('Ширина меньше '+fm(FW+1)+' — крышка не держится в пазах, поставил '+fm(LW)+'.'));
@@ -660,7 +660,7 @@ function specs(){
   if(CAP)rows.push([6,(CAPM==='ply'?ply:gl)+`Накладка-ручка, ${capMat()}`,`${fm(W)} / ${fm(W-2*T)} × ${fm(T)}`,1,'Трапеция под ус, клеится на край крышки']);
   if(insOn)rows.push([7,mt+'Вкладыш (изделие внутри)',`${fm(IW)} × ${fm(IL)} × ${fm(IT)}`,1,'Текст и логотип — по макету'])
   $('parts').innerHTML=rows.map(r=>`<tr><td class="n">${r[0]}</td><td>${r[1]}</td><td class="n">${r[2]}</td><td class="n">${r[3]}</td><td>${r[4]}</td></tr>`).join('');
-  $('groove').innerHTML=`<dt>Ширина</dt><dd>${fm(GW)} мм под стекло ${fm(G)}</dd><dt>Глубина</dt><dd>${fm(DEP)} мм в стенку (остаётся ${fm(D)} мм)</dd><dt>Над пазом</dt><dd>${fm(LIP-(GW-G))} мм фанеры (крышка ниже верха на ${fm(LIP)} мм)</dd><dt>Низ паза</dt><dd>${fm(HLW)} мм от низа = верх низкого торца</dd>`;
+  $('groove').innerHTML=`<dt>Ширина</dt><dd>${fm(GW)} мм под стекло ${fm(G)}</dd><dt>Глубина</dt><dd>${fm(DEP)} мм в стенку (остаётся ${fm(D)} мм)</dd><dt>Над пазом</dt><dd>${fm(LIP)} мм фанеры (крышка ниже верха на ${fm(LIP+GW-G)} мм)</dd><dt>Низ паза</dt><dd>${fm(HLW)} мм от низа = верх низкого торца</dd>`;
   const plyA=(W*L+2*L*H+W*H+W*HLW)/1e6,glA=(W*lidL+(CAP&&CAPM!=='ply'?W*T:0))/1e6;
   $('spec').innerHTML=`<dt>Габарит</dt><dd>${fm(W)} × ${fm(L)} × ${fm(H)}</dd><dt>Внутри</dt><dd>${fm(FW)} × ${fm(FH)} × ${fm(HLW-T)} (до крышки)</dd><dt>Фанера</dt><dd>${T} мм, ≈ ${plyA.toFixed(2).replace('.',',')} м²</dd><dt>Оргстекло</dt><dd>${fm(G)} мм, ≈ ${glA.toFixed(2).replace('.',',')} м²</dd><dt>Видимое поле</dt><dd>${fm(FW)} × ${fm(FH)}</dd><dt>Соединение</dt><dd>ус 45°: 4 угла + 4 ребра дна</dd>`;
 }
@@ -671,7 +671,7 @@ function checks(){const w=[],raw=id=>num(id,NaN),R=v=>fm(v);
   const rw=raw('pW'),rl=raw('pL'),rh=raw('pH'),rt=raw('pT'),rg=raw('pG'),rd=raw('pDep'),rlip=raw('pLip'),rgw=raw('pGW');
   if(isFinite(rw)&&Math.abs(rw-W)>1e-6)w.push(`Ширина ${R(rw)} вне пределов 60–1500 — взял ${R(W)}.`);
   if(isFinite(rl)&&Math.abs(rl-L)>1e-6)w.push(`Длина ${R(rl)} вне пределов 60–1500 — взял ${R(L)}.`);
-  if(isFinite(rh)&&Math.abs(rh-H)>1e-6)w.push(`Высота ${R(rh)} не подходит: нужно от ${R(T+LIP+G+3)} (дно + паз + крышка) до 300 — взял ${R(H)}.`);
+  if(isFinite(rh)&&Math.abs(rh-H)>1e-6)w.push(`Высота ${R(rh)} не подходит: нужно от ${R(T+LIP+Math.max(GW,G)+3)} (дно + паз + крышка) до 300 — взял ${R(H)}.`);
   if(isFinite(rt)&&Math.abs(rt-T)>1e-6)w.push(`Толщина фанеры ограничена 2–30 мм — взял ${R(T)}.`);
   if(isFinite(rg)&&Math.abs(rg-G)>1e-6)w.push(`Толщина стекла ограничена 1–15 мм — взял ${R(G)}.`);
   if(isFinite(rgw)&&Math.abs(rgw-GW)>1e-6)w.push(`Ширина паза ${R(rgw)} — взял ${R(GW)} (от 0,5 до толщины стекла + 3 мм).`);
@@ -679,11 +679,11 @@ function checks(){const w=[],raw=id=>num(id,NaN),R=v=>fm(v);
   if(isFinite(rlip)&&Math.abs(rlip-LIP)>1e-6)w.push(`Утопление крышки ${R(rlip)} — взял ${R(LIP)}.`);
   if(isFinite(rd)&&Math.abs(rd-DEP)>1e-6)w.push(`Глубина паза ${R(rd)} — в стенке должен остаться хотя бы 1 мм, взял ${R(DEP)}.`);
   if(D<3)w.push(`Под пазом в стенке остаётся ${R(D)} мм — стенка может треснуть. Лучше глубина паза не больше ${R(T-3)} мм.`);
-  if(LIP-(GW-G)<2)w.push(`Над пазом остаётся ${R(LIP-(GW-G))} мм фанеры — кромка будет колоться. Увеличьте «от верха крышки до верха коробки».`);
+  if(LIP<2)w.push(`Над пазом остаётся ${R(LIP)} мм фанеры — кромка будет колоться. Увеличьте «Над пазом до верха коробки».`);
   if((LW-FW)/2<2)w.push(`Крышка заходит в паз всего на ${R((LW-FW)/2)} мм с боков — может выскочить. Увеличьте глубину паза или ширину крышки.`);
   if(HLW-T<5)w.push(`Внутри до крышки всего ${R(HLW-T)} мм.`);
-  if(CAP&&CAPM==='ply'&&![3,4,6,8,9,10,12,15,18].some(v=>Math.abs(v-LIP)<1e-6))w.push(`Накладка из фанеры ${R(LIP)} мм — такой толщины обычно не бывает (стандарт: 3, 4, 6, 8, 10, 12). Поменяйте «от верха крышки до верха коробки».`);
-  if(CAP&&CAPM!=='ply'&&!STD_PLEX.some(v=>Math.abs(v-LIP)<1e-6))w.push(`Накладка из оргстекла ${R(LIP)} мм — такой толщины обычно не бывает (стандарт: 2, 3, 4, 5, 6, 8, 10). Поменяйте «от верха крышки до верха коробки».`);
+  if(CAP&&CAPM==='ply'&&![3,4,6,8,9,10,12,15,18].some(v=>Math.abs(v-LIP)<1e-6))w.push(`Накладка из фанеры ${R(LIP)} мм — такой толщины обычно не бывает (стандарт: 3, 4, 6, 8, 10, 12). Поменяйте «Над пазом до верха коробки».`);
+  if(CAP&&CAPM!=='ply'&&!STD_PLEX.some(v=>Math.abs(v-LIP)<1e-6))w.push(`Накладка из оргстекла ${R(LIP)} мм — такой толщины обычно не бывает (стандарт: 2, 3, 4, 5, 6, 8, 10). Поменяйте «Над пазом до верха коробки».`);
   if(!STD_PLEX.some(v=>Math.abs(v-G)<1e-6))w.push(`Оргстекло ${R(G)} мм — нестандартная толщина, уточните у поставщика.`);
   if(OPEN==='hole'&&HO-HD/2<T)w.push(`Отверстие для пальца наезжает на низкий торец — палец не пройдёт. Увеличьте расстояние до центра (минимум ${R(T+HD/2)}).`);
   if(OPEN==='hole'&&isFinite(raw('pHD'))&&Math.abs(raw('pHD')-HD)>1e-6)w.push(`Диаметр отверстия ограничен — взял ${R(HD)} мм.`);
@@ -698,7 +698,7 @@ const PRESETS=[['std','Стандартная 294 × 354 × 38 (снаружи)'
   ['wine','Бутылка вина 0,75',[95,330,95]],['knife','Нож / инструмент',[60,280,40]],['set','Набор (ножи, приборы)',[200,350,50]]];
 $('preset').innerHTML='<option value="">— выбрать —</option>'+PRESETS.map(p=>`<option value="${p[0]}">${p[1]}${p[2]?` — внутри ${p[2].join(' × ')}`:''}</option>`).join('');
 $('preset').addEventListener('change',()=>{const p=PRESETS.find(x=>x[0]===$('preset').value);if(!p)return;
-  const o=p[3]||[p[2][0]+2*T,p[2][1]+2*T,p[2][2]+T+LIP+G];$('pW').value=fm(o[0]);$('pL').value=fm(o[1]);$('pH').value=fm(o[2]);$('pLW').value='';$('pLL').value='';
+  const o=p[3]||[p[2][0]+2*T,p[2][1]+2*T,p[2][2]+T+LIP+GW];$('pW').value=fm(o[0]);$('pL').value=fm(o[1]);$('pH').value=fm(o[2]);$('pLW').value='';$('pLL').value='';
   $('myMsg').textContent=`Шаблон «${p[1]}»: снаружи ${fm(o[0])} × ${fm(o[1])} × ${fm(o[2])} мм.`;$('preset').value='';sync();});
 const MK='korobka-my-v1',myGet=()=>{try{return JSON.parse(localStorage.getItem(MK)||'[]')||[];}catch(e){return[];}};
 function myList(sel){const a=myGet();$('myBox').innerHTML='<option value="">— сохранённые —</option>'+a.map((b,i)=>`<option value="${i}">${esc(b.name)}</option>`).join('');if(sel!=null)$('myBox').value=String(sel);}
@@ -747,7 +747,7 @@ function nestSoon(){clearTimeout(nestT);nestT=setTimeout(()=>{try{nest();}catch(
 function nest(){
   const SW=Math.min(5000,Math.max(200,num('nSW',1520))),SH=Math.min(5000,Math.max(200,num('nSH',1520)));
   const gap=Math.min(100,Math.max(0,num('nGap',10))),mar=Math.min(200,Math.max(0,num('nMar',10))),Q=Math.min(500,Math.max(1,Math.round(num('nQ',1))));
-  const key=[W,L,H,T,HLW,LL,LW,LIP,G,OPEN,HD,CAP,CAPM,SW,SH,gap,mar,Q].join('|');if(key===nestKey&&nestRes)return nestRes;
+  const key=[W,L,H,T,HLW,LL,LW,LIP,G,GW,OPEN,HD,CAP,CAPM,SW,SH,gap,mar,Q].join('|');if(key===nestKey&&nestRes)return nestRes;
   const one=boxParts(),list=[];for(let i=0;i<Q;i++)list.push(...one);
   const r=pack(list,SW,SH,gap,mar,0);nestRes=Object.assign({SW,SH,gap,mar,Q,k:perSheet(SW,SH,gap,mar)},r);nestKey=key;renderNest(nestRes);return nestRes;}
 function nestStats(R){if(!R)return null;const one=boxParts(),sheetA=R.SW*R.SH,partsA=one.reduce((s,p)=>s+p.w*p.h,0),n=R.sheets.length;
@@ -998,14 +998,14 @@ function plyItem(no,w,h,m,groove,label,rot){return{w:rot?h:w,h:rot?w:h,draw(o,x,
     for(let s=1;s<=4;s++){const i=(k+s)%4;if(E[i]){if(!run.length)run.push(C[i]);run.push(C[(i+1)%4]);}else if(run.length){o.poly(run.map(c=>P(...c)));run=[];}}
     if(run.length)o.poly(run.map(c=>P(...c)));}
   o.w(0.3);o.col(.55,.55,.55);o.dash(true);o.poly(R(m.l?T:0,m.t?T:0,w-(m.r?T:0),h-(m.b?T:0)),true);o.dash(false);
-  if(groove){o.col(0,.6,0);o.w(0.5);o.poly(R(0,LIP+G-GW,w,LIP+G),true);}
+  if(groove){o.col(0,.6,0);o.w(0.5);o.poly(R(0,LIP,w,LIP+GW),true);}
   const c=P(w/2,h/2);
   if(!rot){const fs=Math.max(6,Math.min(16,h*0.2));
     o.text(c[0],c[1]+fs*0.15,fs,`№${no}  ${label}  ${fm(w)} × ${fm(h)}`,true,700);
-    if(!m.t)o.text(x+4,y+(groove?LIP+G+4.5:5),5,'ВЕРХ ↑');}
+    if(!m.t)o.text(x+4,y+(groove?LIP+GW+4.5:5),5,'ВЕРХ ↑');}
   else{const fs=Math.max(5,Math.min(16,h*0.35));
     o.text(c[0],c[1],fs,`№${no}`,true,700);if(h>=24)o.text(c[0],c[1]+fs*0.6+4,4.5,`${fm(w)}×${fm(h)}`,true);
-    if(!m.t){const q=P(w*0.25,groove?LIP+G+11:11);o.text(q[0],q[1],5,'ВЕРХ →',true);}}}};}
+    if(!m.t){const q=P(w*0.25,groove?LIP+GW+11:11);o.text(q[0],q[1],5,'ВЕРХ →',true);}}}};}
 function notesPages(){
   const PW=1654,PHp=2339,M=110,pages=[];let c,y,pg=0;
   const np=()=>{const cn=document.createElement('canvas');cn.width=PW;cn.height=PHp;c=cn.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,PW,PHp);pages.push(cn);y=M;pg++;
@@ -1026,7 +1026,7 @@ function notesPages(){
   c.font='400 28px "Golos Text",sans-serif';c.fillStyle='#4b5560';c.fillText('Задание оператору ЧПУ: крой и фрезеровка',M,y);y+=52;
   const y0=y,sw=640,sh=Math.round(sw*cv.height/cv.width);
   try{c.fillStyle='#efece6';c.fillRect(PW-M-sw,y0,sw,sh);c.drawImage(cv,PW-M-sw,y0,sw,sh);}catch(e){}
-  const dl2=[['Габарит',`${fm(W)} × ${fm(L)} × ${fm(H)} мм`],['Фанера',`${fm(T)} мм (замерить!)`],['Оргстекло',`${fm(G)} мм, ${gtint.n}`],['Соединение','ус 45°: 4 угла и дно'],['Паз',`${fm(GW)} × ${fm(DEP)} мм, крышка ниже верха на ${fm(LIP)} мм`],['Внутри',`${fm(FW)} × ${fm(FH)} × ${fm(HLW-T)} мм`],['Отделка',paint?'покраска '+$('pPaint').value:'фанера, тон: '+tone.n],['Дата',new Date().toLocaleDateString('ru-RU')]];
+  const dl2=[['Габарит',`${fm(W)} × ${fm(L)} × ${fm(H)} мм`],['Фанера',`${fm(T)} мм (замерить!)`],['Оргстекло',`${fm(G)} мм, ${gtint.n}`],['Соединение','ус 45°: 4 угла и дно'],['Паз',`${fm(GW)} × ${fm(DEP)} мм, над пазом ${fm(LIP)} мм`],['Внутри',`${fm(FW)} × ${fm(FH)} × ${fm(HLW-T)} мм`],['Отделка',paint?'покраска '+$('pPaint').value:'фанера, тон: '+tone.n],['Дата',new Date().toLocaleDateString('ru-RU')]];
   dl2.forEach(([k,v])=>{c.font='400 24px "Golos Text",sans-serif';c.fillStyle='#66707a';c.fillText(k,M,y);c.font='500 24px "Golos Text",sans-serif';c.fillStyle='#1f2a33';c.fillText(v,M+190,y);y+=36;});
   y=Math.max(y,y0+sh)+10;
   h2('Детали');
@@ -1069,7 +1069,7 @@ function notesPages(){
   fillPoly([[T-DEP+0.3,HLW],[T+sp,HLW],[T+sp,HLW+G],[T-DEP+0.3,HLW+G]],'rgba(150,205,230,.8)','#3d8db0');
   c.font='400 21px "Golos Text",sans-serif';c.fillStyle='#1f2a33';c.textBaseline='middle';
   const lab=(t,px,py)=>{const q=Pp(px,py);c.fillText(t,q[0],q[1]);};
-  lab('ус 45°',T+4,T/2-2);lab('стенка '+T,-1,H+3.5);lab('дно',T+sp*0.55,T/2+0.5);lab(`паз ${fm(GW)}×${fm(DEP)}`,T+sp+3,HLW+G/2);lab('крышка',T+sp*0.45,HLW+G+4);lab(`над пазом ${fm(LIP-(GW-G))}`,T+3,H-1.5);
+  lab('ус 45°',T+4,T/2-2);lab('стенка '+T,-1,H+3.5);lab('дно',T+sp*0.55,T/2+0.5);lab(`паз ${fm(GW)}×${fm(DEP)}`,T+sp+3,HLW+G/2);lab('крышка',T+sp*0.45,HLW+G+4);lab(`над пазом ${fm(LIP)}`,T+3,H-1.5);
   // угол в плане
   const s2=Math.min(9,380/(T+40)),ox2=M+760,oy2=y+20;const Q=(px,py)=>[ox2+px*s2,oy2+py*s2];
   const fp2=(pts,fill)=>{c.beginPath();pts.forEach((p,i)=>{const q=Q(...p);i?c.lineTo(...q):c.moveTo(...q);});c.closePath();c.fillStyle=fill;c.fill();c.strokeStyle='#5a4630';c.lineWidth=2;c.stroke();};
