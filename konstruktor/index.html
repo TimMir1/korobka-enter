@@ -124,6 +124,11 @@ ol,ul{padding-left:20px;margin:0;display:grid;gap:6px}
 .sheet .pt1{fill:#cfa874}
 .sheet .pl{fill:#2a1f12;font-family:var(--f-mono);text-anchor:middle;dominant-baseline:central}
 .warnp{color:var(--warn);font-size:14px;margin:8px 0 0}
+/* режим для клиента: только 3D и управление моделью */
+body.client #cfg,body.client .grid,body.client #nestSec,body.client .fab,body.client #share,body.client #shareC,body.client #gapBadge,body.client #hdims,body.client #hsub{display:none!important}
+body.client .top{grid-template-columns:1fr}
+body.client .stage{position:relative;top:0}
+body.client #c{height:clamp(420px,78vh,860px)}
 .checks{margin:0;padding:8px 10px;border-radius:4px;font-size:13px;background:#e3f3e8;color:#1d5c37;display:grid;gap:4px}
 .checks.warn{background:#fbefd9;color:#7a4a0c}
 .checks ul{margin:0;padding-left:18px;gap:3px}
@@ -151,6 +156,7 @@ ol,ul{padding-left:20px;margin:0;display:grid;gap:6px}
         <button id="spin" aria-pressed="true">Вращение</button>
         <button id="fsOpen" type="button">⛶ Во весь экран</button>
         <button id="share" type="button" class="primary">Поделиться</button>
+        <button id="shareC" type="button">Ссылка для клиента</button>
         <span class="hint" id="hint">Тяни мышью — вращать, колесо — масштаб</span>
       </div>
     </div>
@@ -356,6 +362,7 @@ ol,ul{padding-left:20px;margin:0;display:grid;gap:6px}
 (function(){
 const $=id=>document.getElementById(id);
 const cv=$('c'),g=cv.getContext('2d');
+const CLIENT=/(^|[#&])view=1/.test(location.hash);if(CLIENT){document.body.classList.add('client');document.querySelector('h1').textContent='Ваша коробка';document.title='Ваша коробка';}
 const TONES={natural:{n:'натуральная',pv:'#cfae84'},light:{n:'белёная',op:'source-over',c:'rgba(255,250,240,.38)',pv:'#ddc7a4'},honey:{n:'медовая',op:'multiply',c:'#e8b878',pv:'#c59a5e'},
   oak:{n:'дуб',op:'multiply',c:'#c8955c',pv:'#b48a58'},walnut:{n:'орех',op:'multiply',c:'#8a5a3c',pv:'#7d5536'},wenge:{n:'венге',op:'multiply',c:'#5a4032',pv:'#4f3a2d'}};
 const GTS={clear:{n:'прозрачное',c:[205,235,247],a:.14,e:'rgba(120,175,200,.7)'},smoke:{n:'дымчатое',c:[62,66,72],a:.5,e:'rgba(50,55,60,.8)'},
@@ -621,7 +628,7 @@ setInterval(sync,300);
 
 /* ---------- сохранение ---------- */
 const SK='korobka-konstruktor-v2',FK=DK.concat(BK);
-function save(){try{const o={layers:layers.map(Lr=>{const c=Object.assign({},Lr);delete c._bb;return c;}),sel};
+function save(){if(CLIENT)return;try{const o={layers:layers.map(Lr=>{const c=Object.assign({},Lr);delete c._bb;return c;}),sel};
   FK.forEach(k=>{const e=$(k);o[k]=e.type==='checkbox'?e.checked:e.value;});
   try{localStorage.setItem(SK,JSON.stringify(Object.assign({bgSrc},o)));}catch(e){localStorage.setItem(SK,JSON.stringify(o));}}catch(e){}}
 let DEFV={};
@@ -649,7 +656,7 @@ function specs(){
   checks();
   $('hdims').textContent=`${fm(W)} × ${fm(L)} × ${fm(H)} мм · внутри ${fm(FW)} × ${fm(FH)} × ${fm(HLW-T)} мм`;
   $('hsub').textContent=`Фанера ${fm(T)} мм, все соединения на ус 45° (углы и дно), выдвижная крышка из оргстекла ${fm(G)} мм`+(insOn?`, внутри вкладыш ${fm(IW)} × ${fm(IL)} мм.`:'.');
-  document.title=`Конструктор коробки ${fm(W)}×${fm(L)}`;
+  if(!CLIENT)document.title=`Конструктор коробки ${fm(W)}×${fm(L)}`;
   const ply='<span class="sw" style="background:var(--ply)"></span>',gl='<span class="sw" style="background:#9fd3e6"></span>',mt='<span class="sw" style="background:#b9b7b1"></span>';
   const rows=[
     [1,ply+'Дно',`${fm(W)} × ${fm(L)}`,1,'Ус 45° по 4 кромкам'],
@@ -815,15 +822,17 @@ function shareState(){const f={};FK.forEach(k=>{const e=$(k),v=e.type==='checkbo
     if(Lr.fx!==.5)a.x=r3(Lr.fx);if(Lr.fy!==.5)a.y=r3(Lr.fy);if(Lr.rot)a.r=Lr.rot;if(Lr.wrap)a.p=Lr.wrap;return a;});
   const q={};if(Object.keys(f).length)q.f=f;if(l.length)q.l=l;
   return{link:location.origin+location.pathname+'#k='+b64u(JSON.stringify(q)),img:false};}
-function shotCanvas(){dirty=true;draw();const pad=40,w=1200,ih=Math.round(w*cv.height/cv.width),c=document.createElement('canvas');c.width=w;c.height=ih+170;const x=c.getContext('2d');
+function shotCanvas(plain){dirty=true;draw();const pad=40,w=1200,ih=Math.round(w*cv.height/cv.width),c=document.createElement('canvas');c.width=w;c.height=ih+170;const x=c.getContext('2d');
   x.fillStyle='#f4f2ed';x.fillRect(0,0,c.width,c.height);x.drawImage(cv,0,0,w,ih);
-  x.fillStyle='#1f2a33';x.font='700 40px "Golos Text",sans-serif';x.textBaseline='top';x.fillText(`Коробка ${fm(W)} × ${fm(L)} × ${fm(H)} мм`,pad,ih+28);
+  x.fillStyle='#1f2a33';x.font='700 40px "Golos Text",sans-serif';x.textBaseline='top';x.fillText(plain?'Ваша коробка':`Коробка ${fm(W)} × ${fm(L)} × ${fm(H)} мм`,pad,ih+28);
+  if(plain){x.font='400 26px "Golos Text",sans-serif';x.fillStyle='#4b5560';x.fillText('Откройте ссылку — коробку можно покрутить и открыть крышку',pad,ih+84);return c;}
   x.font='400 26px "Golos Text",sans-serif';x.fillStyle='#4b5560';
   x.fillText(`Фанера ${fm(T)} мм · ${paint?'покраска':'тон '+tone.n} · крышка оргстекло ${fm(G)} мм, ${gtint.n}`+(insOn?` · вкладыш ${fm(IW)}×${fm(IL)}×${fm(IT)}`:''),pad,ih+84);
   return c;}
+$('shareC').onclick=()=>doShare('&view=1',l=>`Ваша коробка — посмотрите в 3D: можно покрутить, открыть крышку и разобрать на детали. ${l}`,true);
 $('share').onclick=()=>doShare('',l=>`Коробка ${fm(W)}×${fm(L)}×${fm(H)} мм — посмотреть и покрутить: ${l}`);
-async function doShare(suf,mk){const st=shareState(),link=st.link+suf,txt=mk(link);
-  try{const c=shotCanvas();const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.9));const file=new File([blob],`korobka-${r1(W)}x${r1(L)}x${r1(H)}.jpg`,{type:'image/jpeg'});
+async function doShare(suf,mk,plain){const st=shareState(),link=st.link+suf,txt=mk(link);
+  try{const c=shotCanvas(plain);const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.9));const file=new File([blob],`korobka-${r1(W)}x${r1(L)}x${r1(H)}.jpg`,{type:'image/jpeg'});
     if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Коробка',text:txt});return;}
     if(navigator.share){await navigator.share({title:'Коробка',text:txt,url:link});return;}
     dl(blob,file.name);try{await navigator.clipboard.writeText(link);}catch(e){}
