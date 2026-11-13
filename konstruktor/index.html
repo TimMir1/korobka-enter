@@ -392,7 +392,7 @@ function solid(A,B,mat,ex,extra){
 
 function build(){
   W=num('pW',294);L=num('pL',354);H=num('pH',38);T=Math.min(30,Math.max(2,num('pT',10)));G=Math.min(15,Math.max(1,num('pG',4)));
-  GW=Math.min(G+3,Math.max(G,num('pGW',G)));LIP=Math.min(60,Math.max(GW-G+0.5,num('pLip',6)));
+  GW=Math.min(G+3,Math.max(0.5,num('pGW',G)));LIP=Math.min(60,Math.max(0.5,GW-G+0.5,num('pLip',6)));
   W=Math.min(1500,Math.max(60,W));L=Math.min(1500,Math.max(60,L));H=Math.min(300,Math.max(T+LIP+G+3,H));
   DEP=Math.min(T-1,Math.max(0.5,num('pDep',4)));
   HW=W/2;HL=L/2;HLW=H-LIP-G;D=T-DEP;FW=W-2*T;FH=L-2*T;
@@ -433,7 +433,7 @@ function build(){
   $('iMax').textContent=`Внутри помещается до ${fm(FW)} × ${fm(FH)} мм, высота до низа крышки ${fm(HLW-T)} мм.`;
   const gap=HLW-T-IT,gcls=gap<1?'bad':gap<2?'warn':'',gtx=`Зазор от верха вкладыша до низа крышки: ${fm(gap)} мм`+(gap<1?' — слишком мало, крышка может тереть':gap<2?' — впритык':'');
   $('iGap').textContent=gtx;$('iGap').className='gap '+gcls;const bd=$('gapBadge');bd.hidden=!insOn;bd.textContent=`Зазор до крышки: ${fm(gap)} мм`;bd.className='badge '+gcls;
-  $('grInfo').textContent=`Паз ${fm(GW)} мм под стекло ${fm(G)} мм (люфт ${fm(GW-G)} мм${num('pGW',0)<G?' — паз не может быть уже стекла, взял '+fm(G):''}). Крышка утоплена на ${fm(LIP)} мм ниже верха, над пазом остаётся ${fm(LIP-(GW-G))} мм фанеры. Высота низкого торца ${fm(HLW)} мм.`;
+  $('grInfo').textContent=`Паз ${fm(GW)} мм под стекло ${fm(G)} мм (${GW<G?'паз УЖЕ стекла на '+fm(G-GW)+' мм':'люфт '+fm(GW-G)+' мм'}). Крышка утоплена на ${fm(LIP)} мм ниже верха, над пазом остаётся ${fm(LIP-(GW-G))} мм фанеры. Высота низкого торца ${fm(HLW)} мм.`;
   {const sw=(LWa-LW)/2,sl=LLa-LL,uw=num('pLW',LWa),ul=num('pLL',LLa),R=v=>'<b style="color:#b3261e">'+v+'</b>';
    const msg=[];if(uw>LWa+0.001||ul>LLa+0.001)msg.push(R('Больше, чем позволяет паз — урезал.'));
    if(uw<FW+0.999)msg.push(R('Ширина меньше '+fm(FW+1)+' — крышка не держится в пазах, поставил '+fm(LW)+'.'));
@@ -605,7 +605,7 @@ let lastD='',lastB='';
 function showErr(m){const b=$('eerr');b.hidden=false;b.textContent=m;}
 let lastPG=null;
 function sync(){try{
-  const pg=$('pG').value;if(pg!==lastPG){if(lastPG!==null)$('pGW').value=pg;lastPG=pg;}
+  const pg=$('pG').value;if(pg!==lastPG){const f=v=>parseFloat(String(v).replace(',','.'));if(lastPG!==null&&Math.abs(f($('pGW').value)-f(lastPG))<1e-6)$('pGW').value=pg;lastPG=pg;}
   const d=sig(DK),b=sig(BK),l=sig(LK);
   if(b!==lastB){lastB=b;readBody();if(d===lastD){art();save();}}
   if(d!==lastD){lastD=d;build();}
@@ -670,7 +670,8 @@ function checks(){const w=[],raw=id=>num(id,NaN),R=v=>fm(v);
   if(isFinite(rh)&&Math.abs(rh-H)>1e-6)w.push(`Высота ${R(rh)} не подходит: нужно от ${R(T+LIP+G+3)} (дно + паз + крышка) до 300 — взял ${R(H)}.`);
   if(isFinite(rt)&&Math.abs(rt-T)>1e-6)w.push(`Толщина фанеры ограничена 2–30 мм — взял ${R(T)}.`);
   if(isFinite(rg)&&Math.abs(rg-G)>1e-6)w.push(`Толщина стекла ограничена 1–15 мм — взял ${R(G)}.`);
-  if(isFinite(rgw)&&Math.abs(rgw-GW)>1e-6)w.push(`Ширина паза ${R(rgw)} — должна быть от толщины стекла до +3 мм, взял ${R(GW)}.`);
+  if(isFinite(rgw)&&Math.abs(rgw-GW)>1e-6)w.push(`Ширина паза ${R(rgw)} — взял ${R(GW)} (от 0,5 до толщины стекла + 3 мм).`);
+  if(GW<G-1e-6)w.push(`Паз ${R(GW)} мм уже стекла ${R(G)} мм — крышка не войдёт. Если стекло на самом деле тоньше, поменяйте толщину стекла (поле «Стекло»), паз останется ${R(GW)}.`);
   if(isFinite(rlip)&&Math.abs(rlip-LIP)>1e-6)w.push(`Утопление крышки ${R(rlip)} — взял ${R(LIP)}.`);
   if(isFinite(rd)&&Math.abs(rd-DEP)>1e-6)w.push(`Глубина паза ${R(rd)} — в стенке должен остаться хотя бы 1 мм, взял ${R(DEP)}.`);
   if(D<3)w.push(`Под пазом в стенке остаётся ${R(D)} мм — стенка может треснуть. Лучше глубина паза не больше ${R(T-3)} мм.`);
