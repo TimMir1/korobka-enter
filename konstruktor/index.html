@@ -569,15 +569,21 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 document.addEventListener('change',e=>{const v=e.target.getAttribute&&e.target.getAttribute('data-vis');if(v){const Lr=layers.find(x=>x.id===v);if(Lr){Lr.on=e.target.checked;art();save();}}});
 $('addT').onclick=()=>addLayer({type:'text',text:'Новый текст',size:10,weight:500,wrap:0,color:lumHex(insBg==='color'?insCol:'#bbbbbb')<.5?'#ffffff':'#1d1d1b'});
 $('addTG').onclick=()=>{showGlass=true;$('vGlass').checked=true;addLayer({type:'text',text:'Текст на крышке',size:12,weight:500,wrap:0,target:'glass',color:'#ffffff',fy:.15});};
+// большие фото/логотипы уменьшаем: запаса хватает на печать 300 dpi, а место в браузере не кончается
+function fitImg(src,max,jpeg){return new Promise(res=>{if(/^data:image\/svg/.test(src)){res(src);return;}const im=new Image();
+  im.onload=()=>{const w=im.naturalWidth,h=im.naturalHeight,k=max/Math.max(w,h);if(!(k<1)){res(src);return;}
+    const c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+    const out=jpeg?c.toDataURL('image/jpeg',0.9):c.toDataURL('image/png');res(out.length<src.length?out:src);};
+  im.onerror=()=>res(src);im.src=src;});}
 function addImg(e,glass){const f=e.target.files&&e.target.files[0];if(!f)return;const rd=new FileReader();
-  rd.onload=()=>{const im=new Image();im.onload=()=>{const id=nid();imgCache[id]=im;
-      addLayer(glass?{id,type:'img',src:rd.result,name:f.name,size:Math.round(Math.min(70,FW*0.3)),tint:false,color:'#ffffff',target:'glass',fy:.85}
-        :{id,type:'img',src:rd.result,name:f.name,size:Math.round(Math.min(90,IW*0.4)),tint:false,color:'#1d1d1b'});e.target.value='';};
-    im.onerror=()=>{showErr('Не удалось открыть файл. Подойдут SVG, PNG или JPG.');};im.src=rd.result;};rd.readAsDataURL(f);}
+  rd.onload=async()=>{const src=await fitImg(rd.result,2400,false);const im=new Image();im.onload=()=>{const id=nid();imgCache[id]=im;
+      addLayer(glass?{id,type:'img',src,name:f.name,size:Math.round(Math.min(70,FW*0.3)),tint:false,color:'#ffffff',target:'glass',fy:.85}
+        :{id,type:'img',src,name:f.name,size:Math.round(Math.min(90,IW*0.4)),tint:false,color:'#1d1d1b'});e.target.value='';};
+    im.onerror=()=>{showErr('Не удалось открыть файл. Подойдут SVG, PNG или JPG.');};im.src=src;};rd.readAsDataURL(f);}
 $('fAdd').addEventListener('change',e=>addImg(e,false));
 $('fAddG').addEventListener('change',e=>{showGlass=true;$('vGlass').checked=true;addImg(e,true);});
 $('fBg').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const rd=new FileReader();
-  rd.onload=()=>{const im=new Image();im.onload=()=>{bgImg=im;bgSrc=rd.result;$('nBg').textContent=f.name;art();save();};im.src=rd.result;};rd.readAsDataURL(f);});
+  rd.onload=async()=>{const src=await fitImg(rd.result,3600,true);const im=new Image();im.onload=()=>{bgImg=im;bgSrc=src;$('nBg').textContent=f.name;art();save();};im.src=src;};rd.readAsDataURL(f);});
 $('lCH').onclick=()=>{const Lr=selL();if(Lr){Lr.fx=.5;art();save();}};
 $('lDup').onclick=()=>{const Lr=selL();if(!Lr)return;const n=JSON.parse(JSON.stringify(Object.assign({},Lr,{_bb:null})));n.id=nid();n.fy=Math.min(1,Lr.fy+0.05);if(imgCache[Lr.id])imgCache[n.id]=imgCache[Lr.id];layers.push(n);pick(n.id);save();};
 $('lDel').onclick=()=>{const i=layers.findIndex(x=>x.id===sel);if(i<0)return;layers.splice(i,1);sel=null;fillEd();renderList();art();save();};
@@ -628,9 +634,18 @@ setInterval(sync,300);
 
 /* ---------- сохранение ---------- */
 const SK='korobka-konstruktor-v2',FK=DK.concat(BK);
+// IndexedDB: в нём сотни мегабайт, в localStorage — около 5 МБ на весь сайт
+let idbP=null;
+function idb(){if(!idbP)idbP=new Promise((res,rej)=>{try{const r=indexedDB.open('korobka',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}catch(e){rej(e);}});return idbP;}
+async function idbGet(k){const db=await idb();return new Promise((res,rej)=>{const r=db.transaction('kv').objectStore('kv').get(k);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function idbSet(k,v){const db=await idb();return new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error||new Error('abort'));});}
+let autoT=null;
 function save(){if(CLIENT)return;try{const o={layers:layers.map(Lr=>{const c=Object.assign({},Lr);delete c._bb;return c;}),sel};
   FK.forEach(k=>{const e=$(k);o[k]=e.type==='checkbox'?e.checked:e.value;});
-  try{localStorage.setItem(SK,JSON.stringify(Object.assign({bgSrc},o)));}catch(e){localStorage.setItem(SK,JSON.stringify(o));}}catch(e){}}
+  // в localStorage — только настройки (картинки без данных), картинки — в IndexedDB
+  const slim=Object.assign({},o,{layers:o.layers.map(Lr=>Lr.type==='img'?Object.assign({},Lr,{src:''}):Lr),imgIdb:1});
+  try{localStorage.setItem(SK,JSON.stringify(slim));}catch(e){}
+  clearTimeout(autoT);autoT=setTimeout(()=>{const imgs={};o.layers.forEach(Lr=>{if(Lr.type==='img'&&Lr.src)imgs[Lr.id]=Lr.src;});idbSet('autoImg',{imgs,bgSrc}).catch(()=>{});},300);}catch(e){}}
 let DEFV={};
 const b64u=str=>btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const unb64u=t=>decodeURIComponent(escape(atob(t.replace(/-/g,'+').replace(/_/g,'/'))));
@@ -645,7 +660,9 @@ function load(){FK.forEach(k=>{const e=$(k);DEFV[k]=e.type==='checkbox'?e.checke
     layers=Array.isArray(o.layers)&&o.layers.length?o.layers:defLayers();
     layers.forEach(Lr=>{if(Lr.type==='img'&&Lr.src){const im=new Image();im.onload=()=>art();im.src=Lr.src;imgCache[Lr.id]=im;}});
     if(o.bgSrc){bgSrc=o.bgSrc;const im=new Image();im.onload=()=>{bgImg=im;$('nBg').textContent='Загруженная картинка';art();};im.src=o.bgSrc;}
-    sel=layers.some(x=>x.id===o.sel)?o.sel:null;}
+    sel=layers.some(x=>x.id===o.sel)?o.sel:null;
+    if(o.imgIdb)idbGet('autoImg').then(d=>{if(!d)return;layers.forEach(Lr=>{const src=d.imgs&&d.imgs[Lr.id];if(Lr.type==='img'&&!Lr.src&&src){Lr.src=src;const im=new Image();im.onload=()=>art();im.src=src;imgCache[Lr.id]=im;}});
+      if(d.bgSrc&&!bgSrc){bgSrc=d.bgSrc;const im=new Image();im.onload=()=>{bgImg=im;$('nBg').textContent='Загруженная картинка';art();};im.src=d.bgSrc;}}).catch(()=>{});}
   else layers=defLayers();}
 
 /* ---------- спецификация ---------- */
@@ -707,20 +724,26 @@ $('preset').innerHTML='<option value="">— выбрать —</option>'+PRESETS
 $('preset').addEventListener('change',()=>{const p=PRESETS.find(x=>x[0]===$('preset').value);if(!p)return;
   const o=p[3]||[p[2][0]+2*T,p[2][1]+2*T,p[2][2]+T+LIP+GW];$('pW').value=fm(o[0]);$('pL').value=fm(o[1]);$('pH').value=fm(o[2]);$('pLW').value='';$('pLL').value='';
   $('myMsg').textContent=`Шаблон «${p[1]}»: снаружи ${fm(o[0])} × ${fm(o[1])} × ${fm(o[2])} мм.`;$('preset').value='';sync();});
-const MK='korobka-my-v1',myGet=()=>{try{return JSON.parse(localStorage.getItem(MK)||'[]')||[];}catch(e){return[];}};
+const MK='korobka-my-v1';let MY=[];
+async function myLoad(){let a=[];try{a=(await idbGet('my'))||[];}catch(e){}
+  // перенос старых коробок из localStorage, чтобы освободить там место
+  try{const old=JSON.parse(localStorage.getItem(MK)||'[]')||[];if(old.length){old.forEach(b=>{if(!a.some(x=>x.name===b.name))a.push(b);});await idbSet('my',a);localStorage.removeItem(MK);}}catch(e){}
+  MY=a;myList();}
+const myGet=()=>MY;
+async function myPut(a){await idbSet('my',a);MY=a;}
 function myList(sel){const a=myGet();$('myBox').innerHTML='<option value="">— сохранённые —</option>'+a.map((b,i)=>`<option value="${i}">${esc(b.name)}</option>`).join('');if(sel!=null)$('myBox').value=String(sel);}
 function stateNow(){const o={layers:layers.map(Lr=>{const c=Object.assign({},Lr);delete c._bb;return c;}),bgSrc};FK.forEach(k=>{const e=$(k);o[k]=e.type==='checkbox'?e.checked:e.value;});return o;}
 function applyState(o){FK.forEach(k=>{const e=$(k);if(o[k]==null||!e)return;if(e.type==='checkbox')e.checked=!!o[k];else e.value=o[k];});
   layers=Array.isArray(o.layers)?o.layers:[];layers.forEach(Lr=>{if(Lr.type==='img'&&Lr.src){const im=new Image();im.onload=()=>art();im.src=Lr.src;imgCache[Lr.id]=im;}});
   if(o.bgSrc){bgSrc=o.bgSrc;const im=new Image();im.onload=()=>{bgImg=im;art();};im.src=o.bgSrc;}
   sel=null;lastPG=$('pG').value;readBody();lastB=sig(BK);lastD=sig(DK);build();fillEd();renderList();}
-$('mySave').onclick=()=>{const name=($('myName').value||'').trim()||`Коробка ${fm(W)}×${fm(L)}×${fm(H)}`;const a=myGet();const i=a.findIndex(b=>b.name===name);
+$('mySave').onclick=()=>{const name=($('myName').value||'').trim()||`Коробка ${fm(W)}×${fm(L)}×${fm(H)}`;const a=myGet().slice();const i=a.findIndex(b=>b.name===name);
   const rec={name,state:stateNow()};if(i>=0)a[i]=rec;else a.push(rec);
-  try{localStorage.setItem(MK,JSON.stringify(a));myList(i>=0?i:a.length-1);$('myMsg').textContent=`Сохранено: «${name}».`;}
-  catch(e){$('myMsg').textContent='Не хватило места в браузере — скорее всего, из-за больших картинок. Удалите старые коробки или уменьшите логотип.';}};
+  const a2=a.slice();myPut(a2).then(()=>{myList(i>=0?i:a2.length-1);$('myMsg').textContent=`Сохранено: «${name}».`;})
+    .catch(e=>{$('myMsg').textContent='Не получилось сохранить: '+(e&&e.name==='QuotaExceededError'?'браузер не дал места (приватный режим или переполнен диск).':(e&&e.message||'хранилище недоступно, возможно, приватный режим.'));});};
 $('myBox').addEventListener('change',()=>{const b=myGet()[+$('myBox').value];if(!b||$('myBox').value==='')return;applyState(b.state);$('myName').value=b.name;$('myMsg').textContent=`Открыта «${b.name}».`;});
-$('myDel').onclick=()=>{const v=$('myBox').value;if(v==='')return;const a=myGet();const b=a.splice(+v,1)[0];try{localStorage.setItem(MK,JSON.stringify(a));}catch(e){}myList();$('myMsg').textContent=b?`Удалена «${b.name}».`:'';};
-myList();
+$('myDel').onclick=()=>{const v=$('myBox').value;if(v==='')return;const a=myGet().slice();const b=a.splice(+v,1)[0];myPut(a).then(()=>{myList();$('myMsg').textContent=b?`Удалена «${b.name}».`:'';}).catch(()=>{});};
+myList();if(!CLIENT)myLoad();
 
 /* ---------- раскрой на лист (MaxRects) ---------- */
 const SMk={t:0,r:1,b:1,l:1},SAk={t:1,r:1,b:1,l:1};
