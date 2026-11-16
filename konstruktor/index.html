@@ -132,6 +132,17 @@ body.client #c{height:clamp(420px,78vh,860px)}
 .checks{margin:0;padding:8px 10px;border-radius:4px;font-size:13px;background:#e3f3e8;color:#1d5c37;display:grid;gap:4px}
 .checks.warn{background:#fbefd9;color:#7a4a0c}
 .checks ul{margin:0;padding-left:18px;gap:3px}
+/* разделы настроек сворачиваются; состояние запоминается в браузере */
+.acc{border-top:1px solid var(--line);padding-top:12px;min-width:0}
+.acc>summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;user-select:none}
+.acc>summary::-webkit-details-marker{display:none}
+.acc>summary::before{content:"▸";font-size:11px;flex:none;transition:transform .15s}
+.acc[open]>summary::before{transform:rotate(90deg)}
+.acc[open]>summary{margin-bottom:10px;color:var(--ink)}
+.acc>summary:hover{color:var(--ink)}
+.acc>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sv{margin-left:auto;font-family:var(--f-mono);text-transform:none;letter-spacing:0;color:var(--accent);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.acc[open] .sv{display:none}
 </style>
 </head>
 <body>
@@ -164,8 +175,7 @@ body.client #c{height:clamp(420px,78vh,860px)}
     <aside id="cfg">
       <h2>Настройки</h2>
       <div class="checks" id="checks" role="status"></div>
-      <fieldset>
-        <legend>Шаблоны</legend>
+      <details class="acc" data-k="tpl"><summary><span>Шаблоны</span></summary><fieldset>
         <label class="f" for="preset">Готовый размер (по изделию внутри)
           <select id="preset"><option value="">— выбрать —</option></select></label>
         <div class="row2">
@@ -174,19 +184,17 @@ body.client #c{height:clamp(420px,78vh,860px)}
         </div>
         <div class="tools"><button id="mySave" type="button">Сохранить текущую</button><button id="myDel" type="button">Удалить выбранную</button></div>
         <p class="nm" id="myMsg">Шаблон подставит размеры под текущую толщину фанеры и крышки. Свои коробки хранятся в этом браузере.</p>
-      </fieldset>
-      <hr>
-      <fieldset>
-        <legend>Размеры коробки, мм</legend>
+      </fieldset></details>
+      <details class="acc" data-k="size"><summary><span>Размеры коробки, мм</span><span class="sv" id="svSize"></span></summary><fieldset>
         <div class="row">
           <label class="f" for="pW">Ширина<input id="pW" type="text" inputmode="decimal" autocomplete="off" value="294"></label>
           <label class="f" for="pL">Длина<input id="pL" type="text" inputmode="decimal" autocomplete="off" value="354"></label>
           <label class="f" for="pH">Высота<input id="pH" type="text" inputmode="decimal" autocomplete="off" value="38"></label>
         </div>
         <p class="gap" id="inInfo"></p>
-      </fieldset>
-      <fieldset>
-        <legend>Толщина материала, мм — можно вписать своё, через запятую</legend>
+      </fieldset></details>
+      <details class="acc" data-k="mat"><summary><span>Материал, паз и крышка</span><span class="sv" id="svMat"></span></summary><fieldset>
+        <p class="nm">Толщину можно вписать свою, через запятую.</p>
         <div class="row2">
           <div class="f"><label class="f fi" for="pT">Фанера<input id="pT" type="text" inputmode="decimal" autocomplete="off" value="10"></label><div class="chips" data-for="pT"><button type="button" data-v="4">4</button><button type="button" data-v="6">6</button><button type="button" data-v="8">8</button><button type="button" data-v="10">10</button><button type="button" data-v="12">12</button><button type="button" data-v="15">15</button></div></div>
           <div class="f"><label class="f" for="pG">Стекло (оргстекло)<input id="pG" type="text" inputmode="decimal" autocomplete="off" value="4"></label><div class="chips" data-for="pG"><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button><button type="button" data-v="4">4</button><button type="button" data-v="5">5</button></div></div>
@@ -205,9 +213,9 @@ body.client #c{height:clamp(420px,78vh,860px)}
         </div>
         <p class="nm" id="lidInfo"></p>
         <label class="f" for="pOpen">Открывание крышки
-          <select id="pOpen"><option value="cap" selected>Накладка-ручка (как сейчас)</option><option value="hole">Сквозное отверстие для пальца</option></select></label>
+          <select id="pOpen"><option value="cap" selected>Накладка-ручка</option><option value="hole">Сквозное отверстие для пальца</option></select></label>
         <label class="f" for="pCapM" id="wCapM">Материал накладки-ручки
-          <select id="pCapM"><option value="glass" selected>Оргстекло (как сейчас)</option><option value="ply">Фанера</option></select></label>
+          <select id="pCapM"><option value="glass" selected>Оргстекло</option><option value="ply">Фанера</option></select></label>
         <p class="nm" id="capInfo"></p>
         <div id="wHole" class="sub2" hidden>
           <div class="row2">
@@ -218,10 +226,8 @@ body.client #c{height:clamp(420px,78vh,860px)}
           <p class="nm" id="holeInfo"></p>
         </div>
         <p class="nm" id="grInfo"></p>
-      </fieldset>
-      <hr>
-      <fieldset>
-        <legend>Цвет корпуса</legend>
+      </fieldset></details>
+      <details class="acc" data-k="color"><summary><span>Цвет корпуса</span><span class="sv" id="svColor"></span></summary><fieldset>
         <label class="f" for="pMat">Отделка
           <select id="pMat"><option value="ply" selected>Фанера, без покраски</option><option value="paint">Покраска</option></select></label>
         <label class="f" for="pWood" id="wWood">Тон фанеры (масло / морилка)
@@ -232,10 +238,8 @@ body.client #c{height:clamp(420px,78vh,860px)}
           <div class="pal" data-for="pPaint" aria-label="Цвета краски"></div>
           <label class="f" for="pPaint">Свой цвет (HEX)<input id="pPaint" class="hex" type="text" value="#24384f" maxlength="7" spellcheck="false" autocomplete="off"></label>
         </div>
-      </fieldset>
-      <hr>
-      <fieldset>
-        <legend>Вкладыш — изделие внутри</legend>
+      </fieldset></details>
+      <details class="acc" data-k="ins"><summary><span>Вкладыш — изделие внутри</span><span class="sv" id="svIns"></span></summary><fieldset>
         <label class="f" for="iOn">Вкладыш
           <select id="iOn"><option value="off" selected>Без вкладыша</option><option value="on">С вкладышем</option></select></label>
         <div id="wIns" class="sub2" hidden>
@@ -258,10 +262,8 @@ body.client #c{height:clamp(420px,78vh,860px)}
           </div>
           <div class="lst" id="lst" aria-label="Элементы на вкладыше"></div>
         </div>
-      </fieldset>
-      <hr>
-      <fieldset>
-        <legend>Крышка (стекло): гравировка</legend>
+      </fieldset></details>
+      <details class="acc" data-k="eng"><summary><span>Гравировка на крышке</span><span class="sv" id="svEng"></span></summary><fieldset>
         <div class="tools">
           <button id="addTG" type="button">+ Текст на крышку</button>
           <label class="btn" for="fAddG">+ Логотип на крышку</label>
@@ -269,8 +271,9 @@ body.client #c{height:clamp(420px,78vh,860px)}
         </div>
         <div class="lst" id="lstG" aria-label="Гравировка на крышке"></div>
         <label class="chk" for="vGlass"><input id="vGlass" type="checkbox" checked> Показывать гравировку крышки на макете</label>
-      </fieldset>
+      </fieldset></details>
       <div class="ed" id="ed" hidden>
+        <label class="f" for="lName" id="wName">Название в списке<input id="lName" type="text" autocomplete="off" placeholder="например, Логотип клиента"></label>
         <label class="f" for="lText" id="wText">Текст<textarea id="lText" rows="2"></textarea></label>
         <div class="row2">
           <label class="f" for="lSize" id="lSizeL">Размер шрифта, мм<input id="lSize" type="text" inputmode="decimal" autocomplete="off"></label>
@@ -287,20 +290,16 @@ body.client #c{height:clamp(420px,78vh,860px)}
         <label class="chk" for="lTint" id="wTint"><input id="lTint" type="checkbox"> Перекрасить логотип в выбранный цвет</label>
         <div class="tools"><button id="lCH" type="button">По центру</button><button id="lDup" type="button">Копия</button><button id="lDel" type="button">Удалить</button></div>
       </div>
-      <hr>
-      <fieldset>
-        <legend>Макет — двигай элементы пальцем или мышью</legend>
+      <details class="acc" data-k="art"><summary><span>Макет — двигай элементы</span><span class="sv" id="svArt"></span></summary><fieldset>
         <div class="prev"><canvas id="eprev" tabindex="0" aria-label="Макет: перетаскивай элементы"></canvas></div>
         <p class="nm">Нажми на элемент и тащи. Стрелки двигают выбранный на 1 мм, с Shift — на 10 мм. Ширина строки 0 — без переноса.</p>
         <p id="eerr" class="nm" style="color:var(--warn)" hidden></p>
-      </fieldset>
-      <hr>
-      <fieldset>
-        <legend>Экспорт</legend>
+      </fieldset></details>
+      <details class="acc" data-k="exp"><summary><span>Экспорт</span></summary><fieldset>
         <button id="xPdf" class="primary" type="button">Скачать PDF: крой под фрезеровку</button>
         <div class="tools"><button id="xIns" type="button">Макет вкладыша PNG</button><button id="xGl" type="button">Гравировка PNG (зеркально)</button></div>
         <p class="nm" id="xMsg">В PDF: задание оператору на русском, крой фанеры 1:1 по цветам линий, крой оргстекла и вкладыша.</p>
-      </fieldset>
+      </fieldset></details>
     </aside>
   </div>
 
@@ -345,6 +344,7 @@ body.client #c{height:clamp(420px,78vh,860px)}
       <label class="f" for="nGap">Между деталями, мм<input id="nGap" type="text" inputmode="decimal" autocomplete="off" value="10"></label>
       <label class="f" for="nMar">Отступ от края листа<input id="nMar" type="text" inputmode="decimal" autocomplete="off" value="10"></label>
     </div>
+    <label class="chk" for="nFull" style="margin-bottom:14px"><input id="nFull" type="checkbox"> Сквозной рез по всему контуру, включая кромки с усом (контрольный проход)</label>
     <div class="nestg">
       <div><div class="sheets" id="sheets"></div><p class="warnp" id="nOver" hidden></p></div>
       <div>
@@ -352,7 +352,7 @@ body.client #c{height:clamp(420px,78vh,860px)}
         <h3>Оргстекло</h3><dl id="nGl"></dl>
         <h3>Длина резки</h3>
         <div class="tbl"><table><thead><tr><th>Операция</th><th>1 коробка, м</th><th id="nQh">Всего, м</th><th>Контуров</th></tr></thead><tbody id="nCut"></tbody></table></div>
-        <p class="nm" style="margin-top:8px">Длина — по одному проходу. Если режете в несколько проходов по глубине, умножьте на число проходов. Ус 45° на каждой детали идёт одной непрерывной линией, без подъёма головки.</p>
+        <p class="nm" style="margin-top:8px">Длина — по одному проходу. Если режете в несколько проходов по глубине, умножьте на число проходов. Ус 45° на каждой детали идёт одной непрерывной линией, без подъёма головки. <span id="nCutNote"></span></p>
       </div>
     </div>
   </section>
@@ -365,10 +365,10 @@ const cv=$('c'),g=cv.getContext('2d');
 const CLIENT=/(^|[#&])view=1/.test(location.hash);if(CLIENT){document.body.classList.add('client');document.querySelector('h1').textContent='Ваша коробка';document.title='Ваша коробка';}
 const TONES={natural:{n:'натуральная',pv:'#cfae84'},light:{n:'белёная',op:'source-over',c:'rgba(255,250,240,.38)',pv:'#ddc7a4'},honey:{n:'медовая',op:'multiply',c:'#e8b878',pv:'#c59a5e'},
   oak:{n:'дуб',op:'multiply',c:'#c8955c',pv:'#b48a58'},walnut:{n:'орех',op:'multiply',c:'#8a5a3c',pv:'#7d5536'},wenge:{n:'венге',op:'multiply',c:'#5a4032',pv:'#4f3a2d'}};
-const GTS={clear:{n:'прозрачное',c:[205,235,247],a:.14,e:'rgba(120,175,200,.7)'},smoke:{n:'дымчатое',c:[62,66,72],a:.5,e:'rgba(50,55,60,.8)'},
+const GTS={clear:{n:'прозрачное',c:[205,235,247],a:.06,e:'rgba(120,175,200,.7)'},smoke:{n:'дымчатое',c:[62,66,72],a:.5,e:'rgba(50,55,60,.8)'},
   bronze:{n:'бронза',c:[150,105,60],a:.42,e:'rgba(120,85,50,.8)'},blue:{n:'голубое',c:[110,165,215],a:.32,e:'rgba(80,130,180,.8)'},frost:{n:'матовое',c:[236,240,242],a:.64,e:'rgba(170,180,185,.8)'}};
 let tone=TONES.natural,gtint=GTS.clear,egSh=null;
-const PX=3;let OPEN='cap',HD=15,HO=25,CAP=true,CAPM='glass';const capMat=()=>(CAPM==='ply'?'фанера ':'оргстекло ')+fm(LIP);let DEP=4,LIP=6,GW=4.2,LW=0,LL=0,LWa=0,LLa=0; // губа над пазом, глубина паза, пикс/мм макета
+const PX=3;let FULLCUT=false,OPEN='cap',HD=15,HO=25,CAP=true,CAPM='glass';const capMat=()=>(CAPM==='ply'?'фанера ':'оргстекло ')+fm(LIP);let DEP=4,LIP=6,GW=4.2,LW=0,LL=0,LWa=0,LLa=0; // губа над пазом, глубина паза, пикс/мм макета
 let W,L,H,T,G,HW,HL,HLW,D,FW,FH,IW=254,IL=314,IT=3,insOn=false,parts=[];
 const wood=new Image(),edge=new Image();let ready=0,dirty=true;
 wood.onload=edge.onload=()=>{ready++;dirty=true;};
@@ -401,6 +401,7 @@ function solid(A,B,mat,ex,extra){
 }
 
 function build(){
+  FULLCUT=$('nFull').checked;
   W=num('pW',294);L=num('pL',354);H=num('pH',38);T=Math.min(30,Math.max(2,num('pT',10)));G=Math.min(15,Math.max(1,num('pG',4)));
   GW=Math.min(G+3,Math.max(0.5,num('pGW',G)));LIP=Math.min(60,Math.max(0.5,num('pLip',6)));
   W=Math.min(1500,Math.max(60,W));L=Math.min(1500,Math.max(60,L));H=Math.min(300,Math.max(T+LIP+Math.max(GW,G)+3,H));
@@ -539,18 +540,22 @@ function selL(){return layers.find(x=>x.id===sel)||null;}
 function defLayers(){return[];}
 const esc=s=>String(s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
 function renderList(){
-  const row=Lr=>{const nm=Lr.type==='img'?(Lr.name||'Картинка'):(String(Lr.text||'').split('\n')[0]||'(пусто)');
+  const base=Lr=>Lr.type==='img'?(Lr.name||'Картинка'):(String(Lr.text||'').split('\n')[0]||'(пусто)');
+  // одинаковые названия (один файл загружен дважды) нумеруем, чтобы не путать
+  const tot={},seen={};layers.forEach(Lr=>{const b=base(Lr);tot[b]=(tot[b]||0)+1;});const nmOf={};layers.forEach(Lr=>{const b=base(Lr);seen[b]=(seen[b]||0)+1;nmOf[Lr.id]=tot[b]>1?b+' · '+seen[b]:b;});
+  const row=Lr=>{const nm=nmOf[Lr.id];
     const tg=Lr.type==='img'?'лого':'текст';
     return `<div class="li"><input type="checkbox" data-vis="${Lr.id}" ${Lr.on!==false?'checked':''} aria-label="Показывать"><button type="button" data-sel="${Lr.id}" aria-pressed="${Lr.id===sel}"><span>${esc(nm)}</span></button><span class="tag${Lr.target==='glass'?' gl':''}">${tg}</span></div>`;};
   const rev=layers.slice().reverse();
   $('lst').innerHTML=rev.filter(Lr=>Lr.target!=='glass').map(row).join('')||'<p class="nm" style="padding:4px">Пока пусто — добавь текст или логотип.</p>';
   $('lstG').innerHTML=rev.filter(Lr=>Lr.target==='glass').map(row).join('')||'<p class="nm" style="padding:4px">Пока пусто. Добавь текст или логотип — они будут выгравированы на стекле крышки.</p>';
-  const Lr=selL(),host=Lr&&Lr.target==='glass'?$('lstG'):$('lst'),ed=$('ed');if(host.nextElementSibling!==ed){const fe=document.activeElement;host.after(ed);if(fe&&ed.contains(fe))fe.focus();}}
-const LK=['lText','lSize','lWeight','lColor','lTarget','lWrap','lTint','lRot'];
+  const Lr=selL(),host=Lr&&Lr.target==='glass'?$('lstG'):$('lst'),ed=$('ed');if(host.nextElementSibling!==ed){const fe=document.activeElement;host.after(ed);if(fe&&ed.contains(fe))fe.focus();}
+  if(FW)try{checks();}catch(e){}}
+const LK=['lName','lText','lSize','lWeight','lColor','lTarget','lWrap','lTint','lRot'];
 const sig=ks=>ks.map(k=>{const e=$(k);return e?(e.type==='checkbox'?e.checked:e.value):'';}).join('\u0001');
 let lastL='';
 function fillEd(){const Lr=selL();$('ed').hidden=!Lr;
-  if(Lr){$('lText').value=Lr.text||'';$('lSize').value=String(Lr.size).replace('.',',');$('lWeight').value=String(Lr.weight||400);$('lColor').value=Lr.color||'#000000';$('lTarget').value=Lr.target;$('lWrap').value=Lr.wrap||0;$('lTint').checked=!!Lr.tint;$('lRot').value=String(Lr.rot||0).replace('.',',');
+  if(Lr){$('lName').value=Lr.type==='img'?(Lr.name||''):'';$('wName').hidden=Lr.type!=='img';$('lText').value=Lr.text||'';$('lSize').value=String(Lr.size).replace('.',',');$('lWeight').value=String(Lr.weight||400);$('lColor').value=Lr.color||'#000000';$('lTarget').value=Lr.target;$('lWrap').value=Lr.wrap||0;$('lTint').checked=!!Lr.tint;$('lRot').value=String(Lr.rot||0).replace('.',',');
     $('wText').hidden=Lr.type==='img';$('wWeight').hidden=Lr.type!=='text';$('wWrap').hidden=Lr.type!=='text';edVis(Lr);
     $('lSizeL').firstChild.nodeValue=Lr.type==='img'?'Ширина логотипа, мм':'Размер шрифта, мм';}
   lastL=sig(LK);markPal();markChips();}
@@ -559,11 +564,11 @@ function edVis(Lr){const img=Lr.type==='img',gl=$('lTarget').value==='glass';$('
 function readEd(){const Lr=selL();if(!Lr)return;
   const tg=$('lTarget').value;
   if(tg!==Lr.target){Lr.target=tg;if(tg==='glass'){Lr.color='#ffffff';$('lColor').value='#ffffff';}else if(Lr.color==='#ffffff'){Lr.color='#1d1d1b';$('lColor').value='#1d1d1b';}}
-  if(Lr.type!=='img')Lr.text=$('lText').value;
+  if(Lr.type!=='img')Lr.text=$('lText').value;else{const nm=$('lName').value.trim();if(nm)Lr.name=nm;}
   const sz=num('lSize',0);if(sz>0)Lr.size=sz;
   Lr.weight=+$('lWeight').value||400;if(hexOk($('lColor').value))Lr.color=hexN($('lColor').value);Lr.wrap=Math.max(0,num('lWrap',0));Lr.rot=((num('lRot',0)%360)+360)%360>180?((num('lRot',0)%360)+360)%360-360:((num('lRot',0)%360)+360)%360;Lr.tint=$('lTint').checked;
   edVis(Lr);lastL=sig(LK);markChips();}
-function pick(id){sel=id;fillEd();renderList();art();}
+function pick(id){sel=id;const Lr=selL();if(Lr){accOpen(Lr.target==='glass'?'eng':'ins');accOpen('art');}fillEd();renderList();art();}
 function addLayer(o){const Lr=Object.assign({id:nid(),fx:.5,fy:.5,target:'insert',on:true,color:'#1d1d1b'},o);layers.push(Lr);pick(Lr.id);save();}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-sel]');if(b)pick(b.getAttribute('data-sel'));});
 document.addEventListener('change',e=>{const v=e.target.getAttribute&&e.target.getAttribute('data-vis');if(v){const Lr=layers.find(x=>x.id===v);if(Lr){Lr.on=e.target.checked;art();save();}}});
@@ -617,7 +622,7 @@ function readBody(){paint=$('pMat').value==='paint';tone=TONES[$('pWood').value]
   $('wPaint').hidden=!paint;$('wICol').hidden=insBg!=='color';$('wIFile').hidden=insBg!=='file';markPal();}
 
 /* ---------- синхронизация полей (события + сверка) ---------- */
-const DK=['pW','pL','pH','pT','pG','pGW','pLip','pDep','pLW','pLL','pOpen','pCapM','pHD','pHO','pHCap','iOn','iW','iL','iT','nQ','nSW','nSH','nGap','nMar'],BK=['pMat','pPaint','pWood','pGlassT','iBg','iCol','vGlass'];
+const DK=['pW','pL','pH','pT','pG','pGW','pLip','pDep','pLW','pLL','pOpen','pCapM','pHD','pHO','pHCap','iOn','iW','iL','iT','nQ','nSW','nSH','nGap','nMar','nFull'],BK=['pMat','pPaint','pWood','pGlassT','iBg','iCol','vGlass'];
 let lastD='',lastB='';
 function showErr(m){const b=$('eerr');b.hidden=false;b.textContent=m;}
 let lastPG=null;
@@ -627,10 +632,24 @@ function sync(){try{
   if(b!==lastB){lastB=b;readBody();if(d===lastD){art();save();}}
   if(d!==lastD){lastD=d;build();}
   if(l!==lastL&&selL()){readEd();art();renderList();save();}
+  accSum();
   $('eerr').hidden=true;
 }catch(err){showErr('Ошибка: '+err.message);}}
 document.addEventListener('input',sync,true);document.addEventListener('change',sync,true);document.addEventListener('keyup',sync,true);
 setInterval(sync,300);
+
+/* ---------- разделы настроек ---------- */
+const AK='korobka-acc-v1',ACC_DEF={tpl:1,size:1,exp:1};
+const accEl=k=>document.querySelector('.acc[data-k="'+k+'"]');
+function accOpen(k){const d=accEl(k);if(d&&!d.open)d.open=true;}
+(function(){let st=null;try{st=JSON.parse(localStorage.getItem(AK)||'null');}catch(e){}
+  document.querySelectorAll('.acc').forEach(d=>{const k=d.getAttribute('data-k');d.open=st&&st[k]!=null?!!st[k]:!!ACC_DEF[k];
+    d.addEventListener('toggle',()=>{const o={};document.querySelectorAll('.acc').forEach(x=>{o[x.getAttribute('data-k')]=x.open?1:0;});try{localStorage.setItem(AK,JSON.stringify(o));}catch(e){}});});})();
+function accSum(){if(!FW)return;const set=(id,t)=>{const e=$(id);if(e&&e.textContent!==t)e.textContent=t;};
+  const cnt=gl=>layers.filter(Lr=>(Lr.target==='glass')===gl).length,el=n=>n?n+' эл.':'пусто';
+  set('svSize',`${fm(W)} × ${fm(L)} × ${fm(H)}`);set('svMat',`фанера ${fm(T)} · стекло ${fm(G)}`);
+  set('svColor',(paint?'покраска':tone.n)+' · '+gtint.n);
+  set('svIns',insOn?`${fm(IW)} × ${fm(IL)} × ${fm(IT)}`:'нет');set('svEng',el(cnt(true)));set('svArt',el(layers.length));}
 
 /* ---------- сохранение ---------- */
 const SK='korobka-konstruktor-v2',FK=DK.concat(BK);
@@ -712,6 +731,8 @@ function checks(){const w=[],raw=id=>num(id,NaN),R=v=>fm(v);
   if(OPEN==='hole'&&HO-HD/2<T)w.push(`Отверстие для пальца наезжает на низкий торец — палец не пройдёт. Увеличьте расстояние до центра (минимум ${R(T+HD/2)}).`);
   if(OPEN==='hole'&&isFinite(raw('pHD'))&&Math.abs(raw('pHD')-HD)>1e-6)w.push(`Диаметр отверстия ограничен — взял ${R(HD)} мм.`);
   if(insOn&&HLW-T-IT<1)w.push('Вкладыш почти упирается в крышку — крышка будет тереть.');
+  {const st=layers.filter(Lr=>Lr.on!==false&&Lr.type==='text'&&(Lr.target==='glass'||insOn)&&/^(Новый текст|Текст на крышке)$/.test(String(Lr.text||'').trim()));
+   if(st.length)w.push(`На макете остался текст-заготовка «${esc(String(st[0].text).trim())}» — замените или удалите его: клиент увидит его по ссылке.`);}
   if(T>12)w.push(`Для уса на фанере ${R(T)} мм нужна V-фреза 90° диаметром от ${R(2*T)} мм или фаска в несколько проходов.`);
   const c=$('checks');c.className='checks'+(w.length?' warn':'');
   c.innerHTML=w.length?`<b>Проверьте (${w.length}):</b><ul>${w.map(t=>'<li>'+t+'</li>').join('')}</ul>`:'✓ Проверка: размеры сходятся, коробку можно делать.';}
@@ -777,14 +798,16 @@ function nestSoon(){clearTimeout(nestT);nestT=setTimeout(()=>{try{nest();}catch(
 function nest(){
   const SW=Math.min(5000,Math.max(200,num('nSW',1520))),SH=Math.min(5000,Math.max(200,num('nSH',1520)));
   const gap=Math.min(100,Math.max(0,num('nGap',10))),mar=Math.min(200,Math.max(0,num('nMar',10))),Q=Math.min(500,Math.max(1,Math.round(num('nQ',1))));
-  const key=[W,L,H,T,HLW,LL,LW,LIP,G,GW,OPEN,HD,CAP,CAPM,SW,SH,gap,mar,Q].join('|');if(key===nestKey&&nestRes)return nestRes;
+  FULLCUT=$('nFull').checked;
+  const key=[W,L,H,T,HLW,LL,LW,LIP,G,GW,OPEN,HD,CAP,CAPM,SW,SH,gap,mar,Q,FULLCUT].join('|');if(key===nestKey&&nestRes)return nestRes;
   const one=boxParts(),list=[];for(let i=0;i<Q;i++)list.push(...one);
   const r=pack(list,SW,SH,gap,mar,0);nestRes=Object.assign({SW,SH,gap,mar,Q,k:perSheet(SW,SH,gap,mar)},r);nestKey=key;renderNest(nestRes);return nestRes;}
 function nestStats(R){if(!R)return null;const one=boxParts(),sheetA=R.SW*R.SH,partsA=one.reduce((s,p)=>s+p.w*p.h,0),n=R.sheets.length;
   const fill=R.sheets.map(pl=>Math.round(pl.reduce((s,pp)=>s+pp.p.w*pp.p.h,0)/sheetA*100));
   const a=(W-LW)/2;
   return{sheetA,partsA,n,fill,use:n?Math.round(partsA*R.Q/(n*sheetA)*100):0,lidA:W*LL,capA:CAP?W*T:0,
-    ply:2*(W+L)+4*(L+H)+2*(W+H)+2*(W+HLW),mit:2*(W+L)+2*(L+2*H)+(W+2*H)+(W+2*HLW),gr:2*L+W,
+    // ус V-фрезой идёт на всю толщину и сам отделяет деталь; концевой фрезе остаются только прямые кромки ВЕРХ (2 боковины + 2 торца)
+    ply:FULLCUT?2*(W+L)+4*(L+H)+2*(W+H)+2*(W+HLW):2*L+2*W,plyN:FULLCUT?5:4,mit:2*(W+L)+2*(L+2*H)+(W+2*H)+(W+2*HLW),gr:2*L+W,
     lid:LW+W+2*(LL-a)+2*a*Math.SQRT2+(OPEN==='hole'?Math.PI*HD:0),cap:CAP?W+(W-2*T)+2*T*Math.SQRT2:0,lidN:OPEN==='hole'?2:1,capN:CAP?1:0,cp:CAPM==='ply'};}
 function renderNest(R){const S=nestStats(R),Q=R.Q,SW=R.SW,SH=R.SH;
   const show=R.sheets.slice(0,12);
@@ -813,19 +836,21 @@ function renderNest(R){const S=nestStats(R),Q=R.Q,SW=R.SW,SH=R.SH;
     (same&&CAP&&!S.cp?`<dt>Итого ${fm(G)} мм</dt><dd>${m2((S.lidA+S.capA)*Q)} м²</dd>`:'')+
     `<dt></dt><dd style="font-family:var(--f-body);color:var(--muted);font-size:13px">по габаритному прямоугольнику детали, без отхода на рез</dd>`;
   $('nQh').textContent=`${Q} шт, м`;
-  const rows=[['Фанера — сквозной рез (красный)',S.ply,5],['Фанера — ус 45° (синий)',S.mit,5],['Фанера — паз под стекло (зелёный)',S.gr,3],
+  $('nCutNote').textContent=FULLCUT?'Сквозной рез посчитан по всему контуру каждой детали, хотя кромки с усом V-фреза уже прорезала.':'Кромки с усом V-фреза прорезает насквозь сама, поэтому сквозной рез посчитан только по прямым кромкам ВЕРХ.';
+  const rows=[[FULLCUT?'Фанера — сквозной рез по всему контуру (красный)':'Фанера — сквозной рез по кромкам ВЕРХ (красный)',S.ply,S.plyN],['Фанера — ус 45° (синий)',S.mit,5],['Фанера — паз под стекло (зелёный)',S.gr,3],
     [OPEN==='hole'?`Оргстекло — крышка с отверстием Ø${fm(HD)}`:'Оргстекло — крышка',S.lid,S.lidN]].concat(CAP?[[S.cp?`Фанера ${fm(LIP)} мм — накладка`:'Оргстекло — накладка',S.cap,1]]:[]);
   const pc=S.cp?S.cap:0,gc=S.cp?0:S.cap,pn=S.cp?1:0,gn=S.cp?0:S.capN;
   $('nCut').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td class="n">${mm2m(r[1])}</td><td class="n">${mm2m(r[1]*Q)}</td><td class="n">${r[2]*Q}</td></tr>`).join('')+
-    `<tr><th>Фанера всего</th><td class="n"><b>${mm2m(S.ply+S.mit+S.gr+pc)}</b></td><td class="n"><b>${mm2m((S.ply+S.mit+S.gr+pc)*Q)}</b></td><td class="n">${(13+pn)*Q}</td></tr>`+
+    `<tr><th>Фанера всего</th><td class="n"><b>${mm2m(S.ply+S.mit+S.gr+pc)}</b></td><td class="n"><b>${mm2m((S.ply+S.mit+S.gr+pc)*Q)}</b></td><td class="n">${(S.plyN+8+pn)*Q}</td></tr>`+
     `<tr><th>Оргстекло всего</th><td class="n"><b>${mm2m(S.lid+gc)}</b></td><td class="n"><b>${mm2m((S.lid+gc)*Q)}</b></td><td class="n">${(S.lidN+gn)*Q}</td></tr>`;}
 
 /* ---------- 3D ---------- */
-let yaw=-0.62,pitch=0.62,zoom=1,open=0,ex=0,exT=0;
+// стартовый ракурс — со стороны входа крышки: надписи на вкладыше читаются прямо
+const YAW0=-0.3,SWAY=0.45;let yaw=YAW0,yawC=YAW0,spinT=0,pitch=0.74,zoom=1,open=0,ex=0,exT=0;
 let spin=!matchMedia('(prefers-reduced-motion: reduce)').matches;
 $('open').addEventListener('input',()=>{open=$('open').value/100;dirty=true;});
 $('explode').onclick=()=>{exT=exT?0:1;$('explode').setAttribute('aria-pressed',!!exT);};
-$('spin').setAttribute('aria-pressed',spin);$('spin').onclick=()=>{spin=!spin;$('spin').setAttribute('aria-pressed',spin);};
+$('spin').setAttribute('aria-pressed',spin);$('spin').onclick=()=>{spin=!spin;if(spin){yawC=yaw;spinT=0;}$('spin').setAttribute('aria-pressed',spin);};
 let drag=null;
 cv.addEventListener('pointerdown',e=>{drag=[e.clientX,e.clientY];cv.setPointerCapture(e.pointerId);spin=false;$('spin').setAttribute('aria-pressed',false);});
 cv.addEventListener('pointermove',e=>{if(!drag)return;yaw+=(e.clientX-drag[0])*0.008;if(!(e.pointerType==='touch'&&!stage.classList.contains('full')))pitch=Math.max(-0.2,Math.min(1.45,pitch+(e.clientY-drag[1])*0.006));drag=[e.clientX,e.clientY];dirty=true;});
@@ -915,12 +940,12 @@ function drawFace(F,P,o){
     polyPath(S);if(F.kind==='face'){g.fillStyle=F.n[1]>0?'rgba(25,35,45,.28)':'rgba(25,35,45,.12)';g.fill();g.strokeStyle='rgba(60,120,150,.95)';g.lineWidth=1.2;g.stroke();}
     else{g.fillStyle=`rgba(175,220,238,${.45+.3*lam})`;g.fill();}
   }else{
-    const gc=gtint.c;polyPath(S);g.fillStyle=P.mat==='cap'?`rgba(${gc.join(',')},${Math.min(.92,gtint.a+.36+.2*lam)})`:`rgba(${gc.join(',')},${gtint.a+.12*lam})`;g.fill();
+    const gc=gtint.c;polyPath(S);g.fillStyle=P.mat==='cap'?`rgba(${gc.join(',')},${Math.min(.92,gtint.a+.36+.2*lam)})`:`rgba(${gc.join(',')},${gtint.a+.05*lam})`;g.fill();
     g.strokeStyle=gtint.e;g.lineWidth=.8;g.stroke();
     if(P.mat==='glass'&&F.n[1]>0.9){
       rectTex(eg,-(HW-T),HW-T,-(HL-T),HL-T,F.c[1]+0.05,o,Math.max(2,subdiv(S)));
       polyPath(S);const gr=g.createLinearGradient(S[0][0],S[0][1],S[2][0],S[2][1]);
-      gr.addColorStop(0,'rgba(255,255,255,0)');gr.addColorStop(.45,'rgba(255,255,255,.16)');gr.addColorStop(.55,'rgba(255,255,255,0)');g.fillStyle=gr;g.fill();}
+      gr.addColorStop(0,'rgba(255,255,255,0)');gr.addColorStop(.45,'rgba(255,255,255,.09)');gr.addColorStop(.55,'rgba(255,255,255,0)');g.fillStyle=gr;g.fill();}
   }
 }
 // тень гравировки крышки на дне / вкладыше (свет сверху-слева)
@@ -952,7 +977,8 @@ function draw(){
   for(const x of faces)drawFace(x.F,x.P,x.o);
 }
 function loop(){const pe=ex;ex+=(exT-ex)*0.09;if(Math.abs(ex-pe)>1e-4)dirty=true;
-  if(spin&&!drag){yaw+=0.0035;dirty=true;}
+  // не полный оборот, а покачивание вокруг текущего ракурса: текст остаётся читаемым
+  if(spin&&!drag){spinT+=0.008;yaw=yawC+SWAY*Math.sin(spinT);dirty=true;}
   if(dirty&&parts.length){dirty=false;try{draw();}catch(e){showErr('Ошибка 3D: '+e.message);}}requestAnimationFrame(loop);}
 
 /* ---------- экспорт ---------- */
@@ -1014,17 +1040,19 @@ async function sheetPage(title,items,head,sheet){
     ops.c+=`q 0 0 0 rg ${st.wPt.toFixed(3)} 0 0 ${st.hPt.toFixed(3)} ${xPt.toFixed(3)} ${(top-st.hPt).toFixed(3)} cm /${nm} Do Q\n`;
     images.push({name:nm,w:st.w,h:st.h,data:st.data,mask:true,flate:st.flate});}
   return{w:PW*KP,h:PH*KP,content:ops.c,images};}
-const HEAD_PLY=['Единицы — мм, масштаб 1:1. Детали кладутся ЛИЦЕВОЙ пластью ВНИЗ.',
-  'КРАСНЫЙ — сквозной рез снаружи контура.   СИНИЙ — ус 45°: V-фреза 90°, вершина по линии, глубина = толщина фанеры. Ус на детали — одна непрерывная линия.',
+const headPly=()=>['Единицы — мм, масштаб 1:1. Детали кладутся ЛИЦЕВОЙ пластью ВНИЗ.',
+  (FULLCUT?'КРАСНЫЙ — сквозной рез снаружи контура.':'КРАСНЫЙ — сквозной рез по прямой кромке ВЕРХ, фреза снаружи детали.')+'   СИНИЙ — ус 45°: V-фреза 90°, вершина по линии, глубина = толщина фанеры. Ус на детали — одна непрерывная линия.',
   'ЗЕЛЁНЫЙ — паз под стекло.   СЕРЫЙ пунктир — справочно, не резать.   ВЕРХ — прямая верхняя кромка (без уса).',
   'Номера деталей — как в задании на стр. 1. Надписи вставлены картинкой — станок их не режет.'];
 function plyItem(no,w,h,m,groove,label,rot){return{w:rot?h:w,h:rot?w:h,draw(o,x,y){
   // rot — деталь повёрнута на 90° на листе
   const P=(u,v)=>rot?[x+h-v,y+u]:[x+u,y+v],R=(u0,v0,u1,v1)=>[P(u0,v0),P(u1,v0),P(u1,v1),P(u0,v1)];
-  o.w(0.4);o.dash(false);o.col(1,0,0);o.poly(R(0,0,w,h),true);
+  const C=[[0,0],[w,0],[w,h],[0,h]],E=[m.t,m.r,m.b,m.l].map(Boolean);
+  // красный: весь контур (контрольный проход) или только кромки без уса — остальное отрезает V-фреза
+  o.w(0.4);o.dash(false);o.col(1,0,0);
+  if(FULLCUT)o.poly(R(0,0,w,h),true);else E.forEach((e,i)=>{if(!e)o.poly([P(...C[i]),P(...C[(i+1)%4])]);});
   // ус 45°: все синие кромки детали — ОДНОЙ непрерывной линией, станок не поднимает головку на углах
   o.col(0,0,1);o.w(0.8);
-  const C=[[0,0],[w,0],[w,h],[0,h]],E=[m.t,m.r,m.b,m.l].map(Boolean);
   if(E.every(Boolean))o.poly(C.map(c=>P(...c)),true);
   else{const k=E.indexOf(false);let run=[];
     for(let s=1;s<=4;s++){const i=(k+s)%4;if(E[i]){if(!run.length)run.push(C[i]);run.push(C[(i+1)%4]);}else if(run.length){o.poly(run.map(c=>P(...c)));run=[];}}
@@ -1077,14 +1105,15 @@ function notesPages(){
       `Длина резки на ${NR.Q} шт: рез фанеры ${mm2m(S.ply*NR.Q)} м, ус 45° ${mm2m(S.mit*NR.Q)} м, паз ${mm2m(S.gr*NR.Q)} м, оргстекло ${mm2m((S.lid+S.cap)*NR.Q)} м.`,
       'Ус на каждой детали — одна непрерывная синяя линия: станок проходит её без подъёма головки.'],false);}}
   h2('Цвета линий в файле');
-  [[[220,0,0],false,'Красный — сквозной рез по контуру. Фреза снаружи линии.'],[[0,0,230],false,'Синий — ус 45°. V-фреза 90°, вершина идёт по синей линии.'],[[0,150,0],false,'Зелёный — паз под стекло (выборка).'],[[140,140,140],true,'Серый пунктир — справочно: где кончится фаска на верхней пласти. Не резать.'],[[0,0,0],false,'Чёрные надписи — номер детали, размер и «ВЕРХ» (прямая верхняя кромка). Вставлены картинкой, станок их не режет.']].forEach(([cl,dash,t])=>{
+  [[[220,0,0],false,FULLCUT?'Красный — сквозной рез по контуру. Фреза снаружи линии.':'Красный — сквозной рез: у фанеры только прямая кромка ВЕРХ (где нет уса), у оргстекла — весь контур. Фреза снаружи детали.'],[[0,0,230],false,'Синий — ус 45°. V-фреза 90°, вершина идёт по синей линии.'],[[0,150,0],false,'Зелёный — паз под стекло (выборка).'],[[140,140,140],true,'Серый пунктир — справочно: где кончится фаска на верхней пласти. Не резать.'],[[0,0,0],false,'Чёрные надписи — номер детали, размер и «ВЕРХ» (прямая верхняя кромка). Вставлены картинкой, станок их не режет.']].forEach(([cl,dash,t])=>{
     need(40);c.strokeStyle=`rgb(${cl})`;c.lineWidth=5;c.setLineDash(dash?[14,10]:[]);c.beginPath();c.moveTo(M,y+16);c.lineTo(M+70,y+16);c.stroke();c.setLineDash([]);para(t,25,400,'#1f2a33',96,6);});
   h2('Порядок работы — фанера');
   list([`Замерить толщину фанеры штангенциркулем. Если она не ${T} мм — поменять толщину на странице и выгрузить PDF заново: от неё зависят ус и паз.`,
     'Детали класть ЛИЦЕВОЙ пластью ВНИЗ. Ус и паз фрезеруются сверху, с внутренней стороны.',
     `Паз (зелёный): прямая фреза Ø3 мм или не больше ${fm(G)} мм, ширина ${fm(GW)} мм, глубина ${fm(DEP)} мм (на столько опускать фрезу), 2 прохода. Паз сквозной по длине — выходит в ус. Так задумано: туда заходит крышка.`,
     `Ус 45° (синий): V-фреза 90°, диаметр не меньше ${2*T} мм. Вершина фрезы — по синей линии, глубина ${T} мм + 0,2 мм в жертвенный стол. На верхней пласти фаска выйдет шириной ${T} мм — ровно до серого пунктира. Если фреза меньше — стратегия «фаска» в несколько проходов со смещением.`,
-    `Профиль (красный): концевая фреза Ø6, снаружи контура, глубина ${fm(T+0.3)} мм. Перемычки ставить только на прямых кромках (ВЕРХ). Дно — ус по всем 4 кромкам — держать вакуумом или на двусторонний скотч.`,
+    FULLCUT?`Профиль (красный): концевая фреза Ø6, снаружи контура, глубина ${fm(T+0.3)} мм. Перемычки ставить только на прямых кромках (ВЕРХ). Дно — ус по всем 4 кромкам — держать вакуумом или на двусторонний скотч.`
+      :`Профиль (красный): концевая фреза Ø6, только по прямым кромкам ВЕРХ, снаружи детали, глубина ${fm(T+0.3)} мм. Кромки с усом V-фреза уже прорезала насквозь — по ним профиль не нужен. Перемычки — на кромках ВЕРХ. У дна красной линии нет (ус по всем 4 кромкам) — держать вакуумом или на двусторонний скотч.`,
     'Перед всей партией проверить ус на обрезках: две детали под 90° должны сходиться без щели.'],true);
   h2('Оргстекло и вкладыш');
   list([`Крышка (${fm(G)} мм)`+(CAP&&CAPM!=='ply'?` и накладка (${fm(LIP)} мм)`:'')+(OPEN==='hole'?`, в крышке сквозное отверстие Ø${fm(HD)} для пальца,`:'')+` — лазер или фреза Ø3 по красному контуру. Скосы 45° у крышки — в плане, по контуру, не по торцу.`,
@@ -1126,10 +1155,10 @@ $('xPdf').onclick=async()=>{const btn=$('xPdf');btn.disabled=true;const old=btn.
     if(NR&&NR.sheets.length&&!NR.over.length){
       for(let i=0;i<NR.sheets.length;i++){const pl=NR.sheets[i];
         pages.push(await sheetPage(`ФАНЕРА ${fm(T)} мм — лист ${i+1} из ${NR.sheets.length} (${fm(NR.SW)} × ${fm(NR.SH)}) — коробка ${fm(W)} × ${fm(L)} × ${fm(H)}, ${NR.Q} шт — ${pl.length} дет.`,
-          pl.map(pp=>Object.assign(plyItem(pp.p.no,pp.p.w,pp.p.h,pp.p.m,pp.p.gr,pp.p.name,pp.rot),{x:pp.x,y:pp.y})),HEAD_PLY,{w:NR.SW,h:NR.SH}));}
+          pl.map(pp=>Object.assign(plyItem(pp.p.no,pp.p.w,pp.p.h,pp.p.m,pp.p.gr,pp.p.name,pp.rot),{x:pp.x,y:pp.y})),headPly(),{w:NR.SW,h:NR.SH}));}
     }else
     pages.push(await sheetPage(`ФАНЕРА ${fm(T)} мм — коробка ${fm(W)} × ${fm(L)} × ${fm(H)} — 5 деталей`,[
-      plyItem(1,W,L,{t:1,r:1,b:1,l:1},false,'Дно'),plyItem(2,L,H,M,true,'Боковина'),plyItem(2,L,H,M,true,'Боковина'),plyItem(3,W,H,M,true,'Торец глухой'),plyItem(4,W,HLW,M,false,'Торец низкий')],HEAD_PLY));
+      plyItem(1,W,L,{t:1,r:1,b:1,l:1},false,'Дно'),plyItem(2,L,H,M,true,'Боковина'),plyItem(2,L,H,M,true,'Боковина'),plyItem(3,W,H,M,true,'Торец глухой'),plyItem(4,W,HLW,M,false,'Торец низкий')],headPly()));
     const tw=LW,lidL=LL;
     const acr=[{w:W,h:lidL,draw(o,x,y){o.w(.4);o.dash(false);o.col(1,0,0);const a=(W-tw)/2;o.poly([[x+a,y],[x+a+tw,y],[x+a+tw,y+lidL-a],[x+W,y+lidL],[x,y+lidL],[x+a,y+lidL-a]],true);
         o.col(.55,.55,.55);o.w(.3);o.dash(true);const vo=T-(L-lidL);o.poly([[x+T,y+vo],[x+W-T,y+vo],[x+W-T,y+vo+FH],[x+T,y+vo+FH]],true);o.dash(false);
